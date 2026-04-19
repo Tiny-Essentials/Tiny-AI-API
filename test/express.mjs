@@ -168,6 +168,11 @@ const jsLoader = async (filePath, fileName, req, res) => {
       'import { $1 } from $2;',
     );
 
+    code = code.replace(
+      /\'tiny-essentials\'/g,
+      `'/node_modules/tiny-essentials/dist/v1/libs/TinyMamdaniInferenceSystem.mjs'`,
+    );
+
     res.type('application/javascript');
     res.send(code);
   } catch (err) {
@@ -227,90 +232,15 @@ const readScss = async (filePath, fileName, req, res) => {
 };
 
 // Middleware personalizado para .mjs
-const sources = ['src', 'dist'];
+const sources = ['src', 'dist', 'node_modules/tiny-essentials/dist'];
 for (const src of sources) {
-    const tinyRegex = new RegExp(`^\\/${src}\\/(.*)$`);
-    const where = `./${src}`;
-    app.get(tinyRegex, readFileUrl('application/javascript', ['.mjs', '.js'], where, jsLoader));
-    app.get(tinyRegex, readFileUrl('text/css', ['.css'], where));
-    app.get(tinyRegex, readFileUrl('text/css', ['.scss'], where, readScss));
-    app.get(tinyRegex, readFileUrl('text/markdown', ['.md'], where, mdLoader));
+  const tinyRegex = new RegExp(`^\\/${src.replace(/\//g, '\\/')}\\/(.*)$`);
+  const where = `./${src}`;
+  app.get(tinyRegex, readFileUrl('application/javascript', ['.mjs', '.js'], where, jsLoader));
+  app.get(tinyRegex, readFileUrl('text/css', ['.css'], where));
+  app.get(tinyRegex, readFileUrl('text/css', ['.scss'], where, readScss));
+  app.get(tinyRegex, readFileUrl('text/markdown', ['.md'], where, mdLoader));
 }
-
-// Instalar modulos externos
-/** @type {Record<string, string[]>} */
-const importsToRemove = {
-  buffer: ['Buffer'],
-};
-
-/** @type {(modNames: string[], globalNames: string[], globalResults: string[]) => import('express').Application} */
-const installNodeModules = (modNames, globalNames, globalResults) => async (req, res, next) => {
-  try {
-    const jsList = [];
-    const promises = [];
-    for (const index in modNames) {
-      const modName = modNames[index];
-      promises.push(
-        new Promise(async (resolve, reject) => {
-          try {
-            const result = await build({
-              entryPoints: [modName],
-              bundle: true,
-              write: false,
-              format: 'iife',
-              globalName: globalNames[index],
-              platform: 'browser',
-              external: [...modNames, 'window', 'global'],
-            });
-
-            if (result.errors.length > 0) {
-              for (const err of result.errors) console.error(err);
-              throw new Error(`Failed to bundle ${modName}`);
-            }
-
-            if (result.warnings.length > 0) {
-              for (const warn of result.warnings) console.warn(warn);
-            }
-
-            jsList.push({
-              data: `${result.outputFiles[0].text}${typeof globalResults[index] === 'string' ? `\n${globalResults[index]}\n` : ''}`,
-              index,
-            });
-            resolve();
-          } catch (err) {
-            reject(err);
-          }
-        }),
-      );
-    }
-
-    await Promise.all(promises);
-    jsList.sort(arraySortPositions('index'));
-
-    const final = `
-      // Polyfill: require('${modNames[0]}') e ${globalNames[0]} global
-      (function () {
-        ${jsList.map((js) => js.data).join('\n')}
-      })();
-    `;
-
-    res.type('application/javascript');
-    res.send(final);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send(`Failed to bundle ${modNames[0]}`);
-  }
-};
-
-// Serve buffer global para o navegador
-app.get(
-  '/__buffer.js',
-  installNodeModules(['buffer'], ['Buffer'], ['window.Buffer = Buffer.Buffer;']),
-);
-app.get(
-  '/__jquery.js',
-  installNodeModules(['jquery'], ['jQuery'], ['window.jQuery = jQuery; window.$ = jQuery;']),
-);
 
 // Middleware para servir arquivos estáticos
 app.use(express.static(publicDir));

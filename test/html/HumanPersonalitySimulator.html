@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PsycheSim: Emotional Dashboard</title>
+    <style>
+      :root {
+        --bg-color: #121212;
+        --panel-bg: #1e1e1e;
+        --text-main: #e0e0e0;
+        --text-muted: #888;
+        --accent: #00adb5;
+        --bar-bg: #333;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .dashboard {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 20px;
+        max-width: 1400px;
+        width: 100%;
+      }
+
+      .panel {
+        background-color: var(--panel-bg);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      h2 {
+        border-bottom: 2px solid var(--bar-bg);
+        padding-bottom: 10px;
+        margin-top: 0;
+      }
+
+      /* Controles de Input (Sliders) */
+      .input-group {
+        margin-bottom: 15px;
+      }
+
+      .input-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+      }
+
+      input[type='range'] {
+        width: 100%;
+        cursor: pointer;
+        accent-color: var(--accent);
+      }
+
+      /* Barras de Saída (Sentimentos) */
+      .emotions-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+
+      .output-group {
+        margin-bottom: 10px;
+      }
+
+      .output-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85em;
+        margin-bottom: 4px;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 12px;
+        background-color: var(--bar-bg);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background-color: var(--accent);
+        transition:
+          width 0.3s ease,
+          background-color 0.3s ease;
+        width: 0%;
+      }
+
+      /* Cores baseadas na intensidade */
+      .fill-low {
+        background-color: #4caf50;
+      } /* Verde */
+      .fill-med {
+        background-color: #ffeb3b;
+      } /* Amarelo */
+      .fill-high {
+        background-color: #f44336;
+      } /* Vermelho */
+
+      /* Scrollbar customizada */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-color);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #555;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard">
+      <div class="panel" id="inputs-panel">
+        <h2>🧠 Biological & Contextual Inputs</h2>
+        <div id="controls-container"></div>
+      </div>
+
+      <div class="panel" id="outputs-panel">
+        <h2>📊 Real-Time Emotional Spectrum</h2>
+
+        <h3>Primary Affects (Basic)</h3>
+        <div class="emotions-grid" id="basic-emotions-container"></div>
+
+        <h3 style="margin-top: 30px">Secondary Affects (Complex)</h3>
+        <div class="emotions-grid" id="complex-emotions-container"></div>
+      </div>
+    </div>
+
+    <script type="module" src="./HumanPersonalitySimulator.js"></script>
+  </body>
+</html>
