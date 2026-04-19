@@ -78,7 +78,7 @@ class HumanPersonalitySimulator {
     adrenaline: 20,
     gaba: 50,
     memory_intensity: 0,
-    affective_distance: 0,
+    affective_distance: 50,
     social_interaction: 50,
     sleep_quality: 50,
     sensory_aversion: 0,
