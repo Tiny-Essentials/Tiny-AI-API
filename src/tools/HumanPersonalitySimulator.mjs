@@ -8,10 +8,15 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
  * @property {number} oxytocin - Bonding, empathy, and trust hormone (0-100).
  * @property {number} adrenaline - Fight-or-flight response, arousal (0-100).
  * @property {number} gaba - Primary inhibitory neurotransmitter, promotes calmness (0-100).
- * @property {number} memory_intensity - The vividness of currently active past memories (0-100).
- * @property {number} affective_distance - Physical or emotional distance from an object of affection (0-100).
- * @property {number} social_interaction - Level of recent human connection and interaction (0-100).
- * @property {number} sleep_quality - Restfulness and neuro-recovery from the last sleep cycle (0-100).
+ * @property {number} memory_intensity - Vividness of active past memories (0-100).
+ * @property {number} affective_distance - Physical/emotional distance from a target (0-100).
+ * @property {number} social_interaction - Level of recent human connection (0-100).
+ * @property {number} sleep_quality - Neuro-recovery from the last sleep cycle (0-100).
+ * @property {number} sensory_aversion - Exposure to repulsive stimuli (0-100).
+ * @property {number} social_comparison - Perceived disadvantage compared to others (0-100).
+ * @property {number} social_judgment - Perceived negative evaluation by peers (0-100).
+ * @property {number} goal_blockage - Obstacles preventing a desired outcome (0-100).
+ * @property {number} future_outlook - Cognitive expectation of future events (0=Bleak, 100=Bright).
  */
 
 /**
@@ -20,15 +25,31 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
  * @property {number} happiness - Degree of joy or contentment (0-1).
  * @property {number} anger - Degree of hostility or frustration (0-1).
  * @property {number} fear - Degree of threat-induced distress (0-1).
+ * @property {number} disgust - Revulsion toward offensive stimuli (0-1).
+ * @property {number} interest - Focused attention and curiosity (0-1).
+ * @property {number} boredom - Lack of interest and environmental stimulation (0-1).
  */
 
 /**
  * @typedef {Object} ComplexEmotions
  * @property {number} longing - Melancholic desire or nostalgia (Saudade) (0-1).
  * @property {number} depression - Persistent state of low mood and aversion to activity (0-1).
- * @property {number} love - Deep affection and attachment (0-1).
+ * @property {number} love - Deep affection and romantic attachment (0-1).
  * @property {number} anxiety - Anticipatory dread and somatic tension (0-1).
  * @property {number} burnout - State of emotional, physical, and mental exhaustion (0-1).
+ * @property {number} envy - Resentful longing for someone else's traits/status (0-1).
+ * @property {number} shame - Painful feeling of humiliation or distress (0-1).
+ * @property {number} hostility - Unfriendly or antagonistic attitude (0-1).
+ * @property {number} frustration - Annoyance at being hindered from a goal (0-1).
+ * @property {number} aversion - Strong dislike or disinclination (0-1).
+ * @property {number} affection - Gentle feeling of fondness or liking (0-1).
+ * @property {number} trust - Firm belief in the reliability of someone/something (0-1).
+ * @property {number} jealousy - Fear of losing a relationship to a rival (0-1).
+ * @property {number} compassion - Sympathetic pity and concern for the sufferings of others (0-1).
+ * @property {number} empathy - Ability to understand and share the feelings of another (0-1).
+ * @property {number} hope - Expectation and desire for a certain thing to happen (0-1).
+ * @property {number} passion - Strong and barely controllable emotion/desire (0-1).
+ * @property {number} desire - Strong feeling of wanting to have something (0-1).
  */
 
 /**
@@ -40,7 +61,8 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
  * Advanced Human Personality and Emotion Simulation Engine
- * Uses Mamdani inference to calculate continuous emotional states mimicking neurobiological processes.
+ * Uses Mamdani inference to calculate continuous emotional states mimicking neurobiological
+ * and psychosocial processes. Designed for realistic psychiatric modeling.
  * @beta
  */
 class HumanPersonalitySimulator {
@@ -59,6 +81,11 @@ class HumanPersonalitySimulator {
     affective_distance: 0,
     social_interaction: 50,
     sleep_quality: 50,
+    sensory_aversion: 0,
+    social_comparison: 0,
+    social_judgment: 0,
+    goal_blockage: 0,
+    future_outlook: 50,
   };
 
   constructor() {
@@ -74,7 +101,7 @@ class HumanPersonalitySimulator {
 
   /**
    * Helper to ensure values stay within the 0-100 range required by our Fuzzy Sets.
-   * @param {number} value - The raw input value.
+   * @param {number|string} value - The raw input value.
    * @returns {number} The clamped value between 0 and 100.
    */
   #clamp(value) {
@@ -84,75 +111,96 @@ class HumanPersonalitySimulator {
   get serotonin() {
     return this.#state.serotonin;
   }
-  set serotonin(value) {
-    this.#state.serotonin = this.#clamp(value);
+  set serotonin(v) {
+    this.#state.serotonin = this.#clamp(v);
   }
-
   get dopamine() {
     return this.#state.dopamine;
   }
-  set dopamine(value) {
-    this.#state.dopamine = this.#clamp(value);
+  set dopamine(v) {
+    this.#state.dopamine = this.#clamp(v);
   }
-
   get cortisol() {
     return this.#state.cortisol;
   }
-  set cortisol(value) {
-    this.#state.cortisol = this.#clamp(value);
+  set cortisol(v) {
+    this.#state.cortisol = this.#clamp(v);
   }
-
   get oxytocin() {
     return this.#state.oxytocin;
   }
-  set oxytocin(value) {
-    this.#state.oxytocin = this.#clamp(value);
+  set oxytocin(v) {
+    this.#state.oxytocin = this.#clamp(v);
   }
-
   get adrenaline() {
     return this.#state.adrenaline;
   }
-  set adrenaline(value) {
-    this.#state.adrenaline = this.#clamp(value);
+  set adrenaline(v) {
+    this.#state.adrenaline = this.#clamp(v);
   }
-
   get gaba() {
     return this.#state.gaba;
   }
-  set gaba(value) {
-    this.#state.gaba = this.#clamp(value);
+  set gaba(v) {
+    this.#state.gaba = this.#clamp(v);
   }
-
   get memoryIntensity() {
     return this.#state.memory_intensity;
   }
-  set memoryIntensity(value) {
-    this.#state.memory_intensity = this.#clamp(value);
+  set memoryIntensity(v) {
+    this.#state.memory_intensity = this.#clamp(v);
   }
-
   get affectiveDistance() {
     return this.#state.affective_distance;
   }
-  set affectiveDistance(value) {
-    this.#state.affective_distance = this.#clamp(value);
+  set affectiveDistance(v) {
+    this.#state.affective_distance = this.#clamp(v);
   }
-
   get socialInteraction() {
     return this.#state.social_interaction;
   }
-  set socialInteraction(value) {
-    this.#state.social_interaction = this.#clamp(value);
+  set socialInteraction(v) {
+    this.#state.social_interaction = this.#clamp(v);
   }
-
   get sleepQuality() {
     return this.#state.sleep_quality;
   }
-  set sleepQuality(value) {
-    this.#state.sleep_quality = this.#clamp(value);
+  set sleepQuality(v) {
+    this.#state.sleep_quality = this.#clamp(v);
+  }
+  get sensoryAversion() {
+    return this.#state.sensory_aversion;
+  }
+  set sensoryAversion(v) {
+    this.#state.sensory_aversion = this.#clamp(v);
+  }
+  get socialComparison() {
+    return this.#state.social_comparison;
+  }
+  set socialComparison(v) {
+    this.#state.social_comparison = this.#clamp(v);
+  }
+  get socialJudgment() {
+    return this.#state.social_judgment;
+  }
+  set socialJudgment(v) {
+    this.#state.social_judgment = this.#clamp(v);
+  }
+  get goalBlockage() {
+    return this.#state.goal_blockage;
+  }
+  set goalBlockage(v) {
+    this.#state.goal_blockage = this.#clamp(v);
+  }
+  get futureOutlook() {
+    return this.#state.future_outlook;
+  }
+  set futureOutlook(v) {
+    this.#state.future_outlook = this.#clamp(v);
   }
 
   // ==========================================
-  // DATA MANAGEMENT (IMPORT / EXPORT)
+  // DATA MANAGEMENT
   // ==========================================
 
   /**
@@ -162,19 +210,10 @@ class HumanPersonalitySimulator {
    */
   importData(dbReadings) {
     if (!dbReadings) return;
-    if (dbReadings.serotonin !== undefined) this.serotonin = dbReadings.serotonin;
-    if (dbReadings.dopamine !== undefined) this.dopamine = dbReadings.dopamine;
-    if (dbReadings.cortisol !== undefined) this.cortisol = dbReadings.cortisol;
-    if (dbReadings.oxytocin !== undefined) this.oxytocin = dbReadings.oxytocin;
-    if (dbReadings.adrenaline !== undefined) this.adrenaline = dbReadings.adrenaline;
-    if (dbReadings.gaba !== undefined) this.gaba = dbReadings.gaba;
-    if (dbReadings.memory_intensity !== undefined)
-      this.memoryIntensity = dbReadings.memory_intensity;
-    if (dbReadings.affective_distance !== undefined)
-      this.affectiveDistance = dbReadings.affective_distance;
-    if (dbReadings.social_interaction !== undefined)
-      this.socialInteraction = dbReadings.social_interaction;
-    if (dbReadings.sleep_quality !== undefined) this.sleepQuality = dbReadings.sleep_quality;
+    Object.keys(this.#state).forEach((key) => {
+      // @ts-ignore: mapping dynamic keys to explicit setters
+      if (dbReadings[key] !== undefined) this[this.#snakeToCamel(key)] = dbReadings[key];
+    });
   }
 
   /**
@@ -182,18 +221,16 @@ class HumanPersonalitySimulator {
    * @returns {InternalFeelingStates} The current state object.
    */
   exportData() {
-    return {
-      serotonin: this.serotonin,
-      dopamine: this.dopamine,
-      cortisol: this.cortisol,
-      oxytocin: this.oxytocin,
-      adrenaline: this.adrenaline,
-      gaba: this.gaba,
-      memory_intensity: this.memoryIntensity,
-      affective_distance: this.affectiveDistance,
-      social_interaction: this.socialInteraction,
-      sleep_quality: this.sleepQuality,
-    };
+    return { ...this.#state };
+  }
+
+  /**
+   * Utility to convert snake_case database keys to camelCase setter properties.
+   * @param {string} str - The snake_case string (e.g., "memory_intensity").
+   * @returns {string} The camelCase string (e.g., "memoryIntensity").
+   */
+  #snakeToCamel(str) {
+    return str.replace(/([-_][a-z])/gi, ($1) => $1.toUpperCase().replace('-', '').replace('_', ''));
   }
 
   // ==========================================
@@ -203,41 +240,21 @@ class HumanPersonalitySimulator {
   /**
    * Defines internal biological variables (Neurotransmitters/Hormones).
    * Values range from 0 to 100.
+   * Sets are configured as [0: Low, 1: Medium/Stable, 2: High].
    */
   _initializeNeurochemicalInputs() {
-    // Serotonin (Mood regulator)
-    this.engine.addVariable('serotonin', [
-      new FuzzySet('Low', 0, 0, 20, 40),
-      new FuzzySet('Stable', 30, 50, 70, 80),
-      new FuzzySet('High', 70, 90, 100, 100),
-    ]);
-
-    // Dopamine (Reward, motivation)
-    this.engine.addVariable('dopamine', [
-      new FuzzySet('Low', 0, 0, 20, 40),
-      new FuzzySet('Medium', 30, 50, 70, 80),
-      new FuzzySet('High', 70, 90, 100, 100),
-    ]);
-
-    // Cortisol (Stress, alertness/threat state)
-    this.engine.addVariable('cortisol', [
-      new FuzzySet('Low', 0, 0, 20, 40),
-      new FuzzySet('Moderate', 30, 50, 60, 80),
-      new FuzzySet('High', 70, 90, 100, 100),
-    ]);
-
-    this.engine.addVariable('oxytocin', [
-      new FuzzySet('Low', 0, 0, 20, 40),
-      new FuzzySet('Moderate', 30, 50, 70, 80),
-      new FuzzySet('High', 70, 90, 100, 100),
-    ]);
-
+    ['serotonin', 'dopamine', 'cortisol', 'oxytocin'].forEach((name) => {
+      this.engine.addVariable(name, [
+        new FuzzySet('Low', 0, 0, 20, 40),
+        new FuzzySet('Medium', 30, 50, 70, 80),
+        new FuzzySet('High', 70, 90, 100, 100),
+      ]);
+    });
     this.engine.addVariable('adrenaline', [
-      new FuzzySet('Baseline', 0, 0, 20, 40),
+      new FuzzySet('Low', 0, 0, 20, 40),
       new FuzzySet('Elevated', 30, 60, 80, 90),
       new FuzzySet('Spike', 80, 95, 100, 100),
     ]);
-
     this.engine.addVariable('gaba', [
       new FuzzySet('Low', 0, 0, 20, 40),
       new FuzzySet('Optimal', 30, 60, 80, 90),
@@ -248,30 +265,28 @@ class HumanPersonalitySimulator {
   /**
    * Defines external contextual variables and lifestyle factors.
    * Values range from 0 to 100.
+   * Sets are configured as [0: Low/None, 1: Medium, 2: High/Strong].
    */
   _initializeContextualInputs() {
-    // Intensity of activated past memories (for Longing/Saudade)
-    this.engine.addVariable('memory_intensity', [
-      new FuzzySet('None', 0, 0, 10, 20),
-      new FuzzySet('Light', 15, 30, 50, 70),
-      new FuzzySet('Strong', 60, 80, 100, 100),
-    ]);
+    const defaultSets = [
+      new FuzzySet('Low', 0, 0, 20, 40),
+      new FuzzySet('Medium', 30, 50, 70, 80),
+      new FuzzySet('High', 70, 90, 100, 100),
+    ];
 
-    // Distance from the object of affection/situation (physical or temporal)
-    this.engine.addVariable('affective_distance', [
-      new FuzzySet('Close', 0, 0, 20, 40),
-      new FuzzySet('Far', 50, 80, 100, 100),
-    ]);
-
-    this.engine.addVariable('social_interaction', [
-      new FuzzySet('Isolated', 0, 0, 20, 40),
-      new FuzzySet('Connected', 30, 60, 80, 100),
-    ]);
-
-    this.engine.addVariable('sleep_quality', [
-      new FuzzySet('Poor', 0, 0, 20, 40),
-      new FuzzySet('Adequate', 30, 60, 80, 100),
-    ]);
+    [
+      'memory_intensity',
+      'affective_distance',
+      'sensory_aversion',
+      'social_comparison',
+      'social_judgment',
+      'goal_blockage',
+      'future_outlook',
+      'social_interaction',
+      'sleep_quality',
+    ].forEach((name) => {
+      this.engine.addVariable(name, defaultSets);
+    });
   }
 
   // ==========================================
@@ -279,8 +294,16 @@ class HumanPersonalitySimulator {
   // ==========================================
 
   /**
-   * Core engine for calculating basic emotions.
-   * Fuzzifies the crisp exact numbers into degrees of membership for linguistic sets.
+   * Core engine for calculating basic emotions (Primary affects).
+   * Models the immediate evolutionary responses to physiological baselines.
+   * Psychiatric logic:
+   * - Happiness: Tied to reward (Dopamine) and mood stability (Serotonin), suppressed by stress (Cortisol).
+   * - Anger: A hyper-aroused threat response (Adrenaline + Cortisol) lacking inhibitory control (Low GABA).
+   * - Fear: Acute arousal (Adrenaline) and stress (Cortisol), also exacerbated by low GABA.
+   * - Boredom: Low dopamine + Low adrenaline + Isolation.
+   * - Interest: High dopamine (motivation) + moderate arousal.
+   * - Disgust: Repulsive stimuli overriding neutral state.
+   * - Sadness: Low Serotonin + High Cortisol.
    * @returns {BasicEmotions} Basic emotion degrees (0 to 1)
    */
   _calculateBasicEmotions() {
@@ -289,30 +312,25 @@ class HumanPersonalitySimulator {
     const cor = this.engine.getVariable('cortisol');
     const adr = this.engine.getVariable('adrenaline');
     const gab = this.engine.getVariable('gaba');
+    const avr = this.engine.getVariable('sensory_aversion');
+    const soc = this.engine.getVariable('social_interaction');
 
-    // Happiness: Stable/High Serotonin + High Dopamine, reduced by Cortisol.
     const happinessLevel = Math.max(
       0,
       ser[1].calculate(this.serotonin) * 0.4 +
         dop[2].calculate(this.dopamine) * 0.6 -
         cor[2].calculate(this.cortisol) * 0.4,
     );
-
-    // Anger: High Cortisol + High Adrenaline + Low GABA (Inability to calm down).
     const angerLevel = Math.min(
       1,
       cor[2].calculate(this.cortisol) * 0.5 +
         adr[1].calculate(this.adrenaline) * 0.3 +
         gab[0].calculate(this.gaba) * 0.2,
     );
-
-    // Sadness: Low Serotonin + High Cortisol.
     const sadnessLevel = Math.min(
       1,
       ser[0].calculate(this.serotonin) * 0.7 + cor[2].calculate(this.cortisol) * 0.3,
     );
-
-    // Fear: Adrenaline Spike + High Cortisol, unmitigated by GABA.
     const fearLevel = Math.max(
       0,
       Math.min(
@@ -322,101 +340,158 @@ class HumanPersonalitySimulator {
           gab[2].calculate(this.gaba) * 0.5,
       ),
     );
+    const disgustLevel = Math.min(
+      1,
+      avr[2].calculate(this.sensoryAversion) * 0.8 + gab[0].calculate(this.gaba) * 0.2,
+    );
+    const interestLevel = Math.min(
+      1,
+      dop[2].calculate(this.dopamine) * 0.6 + adr[1].calculate(this.adrenaline) * 0.4,
+    );
+    const boredomLevel = Math.min(
+      1,
+      dop[0].calculate(this.dopamine) * 0.5 +
+        adr[0].calculate(this.adrenaline) * 0.3 +
+        soc[0].calculate(this.socialInteraction) * 0.2,
+    );
 
     return {
       happiness: happinessLevel,
       anger: angerLevel,
       sadness: sadnessLevel,
       fear: fearLevel,
+      disgust: disgustLevel,
+      interest: interestLevel,
+      boredom: boredomLevel,
     };
   }
 
   /**
-   * Engine for calculating complex emotions using state combinations and psychosocial factors.
-   * @param {BasicEmotions} basicEmotions
-   * @returns {ComplexEmotions} Complex emotion degrees (0 to 1)
+   * Engine for calculating complex emotions (Secondary affects).
+   * From a psychiatric perspective, complex emotions are higher-order cognitive appraisals
+   * of basic states mixed with psychosocial contexts (like judgment, comparison, and bonding).
+   * @param {BasicEmotions} basic - The foundational emotional states.
+   * @returns {ComplexEmotions} The calculated degrees of complex emotions (0 to 1).
    */
-  _calculateComplexEmotions(basicEmotions) {
-    const mem = this.engine.getVariable('memory_intensity');
-    const dist = this.engine.getVariable('affective_distance');
-    const oxy = this.engine.getVariable('oxytocin');
-    const dop = this.engine.getVariable('dopamine');
-    const cor = this.engine.getVariable('cortisol');
-    const gab = this.engine.getVariable('gaba');
-    const slp = this.engine.getVariable('sleep_quality');
-    const soc = this.engine.getVariable('social_interaction');
+  _calculateComplexEmotions(basic) {
+    // Indexes: 0 = Low, 1 = Medium, 2 = High
+    const mem = this.engine.getVariable('memory_intensity')[2].calculate(this.memoryIntensity);
+    const dist = this.engine.getVariable('affective_distance')[2].calculate(this.affectiveDistance); // High distance
+    const closeDist = this.engine
+      .getVariable('affective_distance')[0]
+      .calculate(this.affectiveDistance); // Low distance
 
-    // Longing (Saudade): Strong memory + Far affective distance + Latent sadness.
-    const strongMemory = mem[2].calculate(this.memoryIntensity);
-    const farDistance = dist[1].calculate(this.affectiveDistance);
-    const longingLevel = Math.min(
+    const oxyLow = this.engine.getVariable('oxytocin')[0].calculate(this.oxytocin);
+    const oxyHigh = this.engine.getVariable('oxytocin')[2].calculate(this.oxytocin);
+
+    const dopHigh = this.engine.getVariable('dopamine')[2].calculate(this.dopamine);
+    const dopLow = this.engine.getVariable('dopamine')[0].calculate(this.dopamine);
+    const serLow = this.engine.getVariable('serotonin')[0].calculate(this.serotonin);
+    const serHigh = this.engine.getVariable('serotonin')[2].calculate(this.serotonin);
+
+    const corHigh = this.engine.getVariable('cortisol')[2].calculate(this.cortisol);
+    const gabHigh = this.engine.getVariable('gaba')[2].calculate(this.gaba);
+    const adrSpike = this.engine.getVariable('adrenaline')[2].calculate(this.adrenaline);
+
+    const compHigh = this.engine
+      .getVariable('social_comparison')[2]
+      .calculate(this.socialComparison);
+    const judgHigh = this.engine.getVariable('social_judgment')[2].calculate(this.socialJudgment);
+    const blockHigh = this.engine.getVariable('goal_blockage')[2].calculate(this.goalBlockage);
+    const futureBright = this.engine.getVariable('future_outlook')[2].calculate(this.futureOutlook);
+
+    // ==========================================
+    // PSYCHOLOGICAL APPRAISALS
+    // ==========================================
+
+    const longing = Math.min(1, mem * 0.4 + dist * 0.4 + basic.sadness * 0.2);
+    const depression = Math.min(1, serLow * 0.4 + dopLow * 0.3 + basic.sadness * 0.3);
+    const love = Math.min(1, oxyHigh * 0.5 + dopHigh * 0.3 + closeDist * 0.2);
+    const anxiety = Math.min(
       1,
-      strongMemory * 0.4 + farDistance * 0.4 + basicEmotions.sadness * 0.2,
+      corHigh * 0.5 +
+        this.engine.getVariable('gaba')[0].calculate(this.gaba) * 0.3 +
+        basic.fear * 0.2,
+    );
+    const burnout = Math.min(
+      1,
+      corHigh * 0.4 +
+        this.engine.getVariable('sleep_quality')[0].calculate(this.sleepQuality) * 0.4 +
+        serLow * 0.2,
     );
 
-    // Depression: Low Serotonin + Low Dopamine + Isolation.
-    const lowSer = this.engine.getVariable('serotonin')[0].calculate(this.serotonin);
-    const lowDop = dop[0].calculate(this.dopamine);
-    const isolated = soc[0].calculate(this.socialInteraction);
-    const depressionLevel = Math.min(
+    // Social & Ego Emotions
+    const envy = Math.min(1, compHigh * 0.6 + basic.sadness * 0.2 + basic.anger * 0.2);
+    const shame = Math.min(1, judgHigh * 0.6 + corHigh * 0.2 + serLow * 0.2); // Perception of judgment dropping serotonin (status)
+    const jealousy = Math.min(
       1,
-      lowSer * 0.4 + lowDop * 0.3 + isolated * 0.2 + basicEmotions.sadness * 0.1,
-    );
+      compHigh * 0.3 + basic.fear * 0.3 + basic.anger * 0.2 + oxyHigh * 0.2,
+    ); // Threat to a bond
 
-    // Love/Attachment: High Oxytocin + High Dopamine + Close Distance.
-    const highOxy = oxy[2].calculate(this.oxytocin);
-    const highDop = dop[2].calculate(this.dopamine);
-    const closeDist = dist[0].calculate(this.affectiveDistance);
-    const loveLevel = Math.min(1, highOxy * 0.5 + highDop * 0.3 + closeDist * 0.2);
+    // Conflict Emotions
+    const hostility = Math.min(1, basic.anger * 0.5 + basic.disgust * 0.3 + oxyLow * 0.2); // Anger stripped of empathy (low oxytocin)
+    const frustration = Math.min(1, blockHigh * 0.5 + dopHigh * 0.3 + corHigh * 0.2); // High motivation (dopamine) meeting an obstacle
+    const aversion = Math.min(1, basic.disgust * 0.5 + basic.fear * 0.3 + dist * 0.2); // Need to increase distance from stimulus
 
-    // Anxiety: High Cortisol + Low GABA + Subconscious/Basic Fear.
-    const highCor = cor[2].calculate(this.cortisol);
-    const lowGab = gab[0].calculate(this.gaba);
-    const anxietyLevel = Math.min(1, highCor * 0.5 + lowGab * 0.3 + basicEmotions.fear * 0.2);
+    // Pro-Social & Attachment Emotions
+    const affection = Math.min(1, oxyHigh * 0.6 + serHigh * 0.4);
+    const trust = Math.max(0, oxyHigh * 0.5 + gabHigh * 0.3 - corHigh * 0.2); // High bonding and calm, low stress
+    const empathy = Math.min(1, oxyHigh * 0.6 + basic.interest * 0.4);
+    const compassion = Math.min(1, empathy * 0.5 + basic.sadness * 0.3 + gabHigh * 0.2); // Requires empathy, shared sadness, but enough GABA to act
 
-    // Burnout: High Stress + Poor Sleep + Low Dopamine (Lack of reward/exhaustion).
-    const poorSleep = slp[0].calculate(this.sleepQuality);
-    const burnoutLevel = Math.min(1, highCor * 0.4 + poorSleep * 0.4 + lowDop * 0.2);
+    // Future & Motivation Emotions
+    const hope = Math.min(1, futureBright * 0.5 + dopHigh * 0.3 + serHigh * 0.2);
+    const passion = Math.min(1, adrSpike * 0.4 + dopHigh * 0.3 + oxyHigh * 0.3); // High arousal, reward, and bonding
+    const desire = Math.min(1, dopHigh * 0.5 + mem * 0.3 + serLow * 0.2); // Anticipation of reward + memory + a sense of lack (low serotonin)
 
     return {
-      longing: longingLevel,
-      depression: depressionLevel,
-      love: loveLevel,
-      anxiety: anxietyLevel,
-      burnout: burnoutLevel,
+      longing,
+      depression,
+      love,
+      anxiety,
+      burnout,
+      envy,
+      shame,
+      hostility,
+      frustration,
+      aversion,
+      affection,
+      trust,
+      jealousy,
+      compassion,
+      empathy,
+      hope,
+      passion,
+      desire,
     };
   }
 
   /**
-   * Processes the internal state and returns the current personality/emotion profile.
-   * Takes no arguments, relying entirely on the encapsulated state.
-   * @returns {EmotionalState} Full emotional spectrum analysis.
+   * Processes the internal state and returns the full personality/emotion profile.
+   * Formats all fractional values (0-1) into standardized percentages (0-100%).
+   * * @returns {EmotionalState} Full emotional spectrum analysis.
    */
   processEmotionalState() {
-    // 1. Validate and process basic emotions based on biology and raw stimuli
-    const basicEmotions = this._calculateBasicEmotions();
+    const basic = this._calculateBasicEmotions();
+    const complex = this._calculateComplexEmotions(basic);
 
-    // 2. Process complex emotions based on context and basic emotions
-    const complexEmotions = this._calculateComplexEmotions(basicEmotions);
+    /**
+     * Internal formatter to convert raw 0-1 values into 2-decimal percentages.
+     * @template {ComplexEmotions|BasicEmotions} T
+     * @param {T} obj - The emotion object.
+     * @returns {T} Formatted object.
+     */
+    const format = (obj) =>
+      // @ts-ignore
+      Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, Number((v * 100).toFixed(2))]));
 
     // Returns the complete emotional spectrum of the personality simulation
     return {
       timestamp: new Date().toISOString(),
       internalState: this.exportData(),
       emotionalSpectrum: {
-        basic: {
-          happiness: Number((basicEmotions.happiness * 100).toFixed(2)),
-          sadness: Number((basicEmotions.sadness * 100).toFixed(2)),
-          anger: Number((basicEmotions.anger * 100).toFixed(2)),
-          fear: Number((basicEmotions.fear * 100).toFixed(2)),
-        },
-        complex: {
-          longing: Number((complexEmotions.longing * 100).toFixed(2)),
-          depression: Number((complexEmotions.depression * 100).toFixed(2)),
-          love: Number((complexEmotions.love * 100).toFixed(2)),
-          anxiety: Number((complexEmotions.anxiety * 100).toFixed(2)),
-          burnout: Number((complexEmotions.burnout * 100).toFixed(2)),
-        },
+        basic: format(basic),
+        complex: format(complex),
       },
     };
   }
