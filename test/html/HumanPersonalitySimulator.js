@@ -92,7 +92,7 @@ function createEmotionBars(containerId, emotionsObj) {
 
 function updateEmotionsUI() {
   const state = psyche.processEmotionalState();
-  const allEmotions = { ...state.emotionalSpectrum.basic, ...state.emotionalSpectrum.complex };
+  const allEmotions = { ...state.emotionalSpectrum.unconscious_raw, ...state.emotionalSpectrum.unconscious_complex };
 
   Object.keys(allEmotions).forEach((emotion) => {
     const value = allEmotions[emotion]; // Valor entre 0 e 100
@@ -122,8 +122,8 @@ function init() {
 
   // Constrói o HTML dinâmico
   createSliders();
-  createEmotionBars('basic-emotions-container', initialState.emotionalSpectrum.basic);
-  createEmotionBars('complex-emotions-container', initialState.emotionalSpectrum.complex);
+  createEmotionBars('basic-emotions-container', initialState.emotionalSpectrum.unconscious_raw);
+  createEmotionBars('complex-emotions-container', initialState.emotionalSpectrum.unconscious_complex);
 
   // Dispara a primeira atualização para preencher as barras
   updateEmotionsUI();

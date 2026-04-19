@@ -2,6 +2,9 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
  * @typedef {Object} InternalFeelingStates
+ * @property {number} ego_strength - Capacity to manage stress and tolerate frustration without psychological breakdown (0-100).
+ * @property {number} libido - Life drive (Eros), creative energy, and vitality (0-100).
+ * @property {number} death_drive - Destructive drive (Thanatos), repetition compulsion, and self-sabotage (0-100).
  * @property {number} serotonin - Mood and well-being regulator (0-100).
  * @property {number} dopamine - Reward, motivation, and pleasure center (0-100).
  * @property {number} cortisol - Primary stress hormone (0-100).
@@ -54,9 +57,18 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
  * @typedef {Object} EmotionalState
- * @property {{ basic: BasicEmotions; complex: ComplexEmotions; }} emotionalSpectrum
+ * @property {{ unconscious_raw: BasicEmotions; conscious_experienced: BasicEmotions; unconscious_complex: ComplexEmotions; conscious_complex: ComplexEmotions; }} emotionalSpectrum
+ * @property {{ defenses: DefenseMechanisms }} psychologicalStructure
  * @property {InternalFeelingStates} internalState
  * @property {string} timestamp - ISO string of the exact moment the state was processed.
+ */
+
+/**
+ * @typedef {Object} DefenseMechanisms
+ * @property {number} repression - Unconscious blocking of unacceptable emotions (0-1).
+ * @property {number} projection - Attributing one's own unacceptable feelings to others (0-1).
+ * @property {number} sublimation - Channeling unacceptable impulses into constructive behaviors (0-1).
+ * @property {number} dissociation - Disconnecting from thoughts, feelings, or sense of identity to avoid pain (0-1).
  */
 
 /**
@@ -71,6 +83,9 @@ class HumanPersonalitySimulator {
    * @type {InternalFeelingStates}
    */
   #state = {
+    ego_strength: 50,
+    libido: 50,
+    death_drive: 20,
     serotonin: 50,
     dopamine: 50,
     cortisol: 20,
@@ -108,6 +123,24 @@ class HumanPersonalitySimulator {
     return Math.max(0, Math.min(100, Number(value) || 0));
   }
 
+  get ego_strength() {
+    return this.#state.ego_strength;
+  }
+  set ego_strength(v) {
+    this.#state.ego_strength = this.#clamp(v);
+  }
+  get libido() {
+    return this.#state.libido;
+  }
+  set libido(v) {
+    this.#state.libido = this.#clamp(v);
+  }
+  get death_drive() {
+    return this.#state.death_drive;
+  }
+  set death_drive(v) {
+    this.#state.death_drive = this.#clamp(v);
+  }
   get serotonin() {
     return this.#state.serotonin;
   }
@@ -275,6 +308,9 @@ class HumanPersonalitySimulator {
     ];
 
     [
+      'ego_strength',
+      'libido',
+      'death_drive',
       'memory_intensity',
       'affective_distance',
       'sensory_aversion',
@@ -292,6 +328,52 @@ class HumanPersonalitySimulator {
   // ==========================================
   // EMOTIONAL PROCESSING
   // ==========================================
+
+  /**
+   * Engine for calculating Psychoanalytic Defense Mechanisms.
+   * Defenses are mobilized when the Ego is threatened by intense basic/complex emotions,
+   * modulated by the inherent Ego Strength and Unconscious Drives.
+   * @param {BasicEmotions} basic
+   * @param {ComplexEmotions} complex
+   * @returns {DefenseMechanisms}
+   */
+  _calculateDefenseMechanisms(basic, complex) {
+    const egoStrong = this.engine.getVariable('ego_strength')[2].calculate(this.ego_strength);
+    const egoWeak = this.engine.getVariable('ego_strength')[0].calculate(this.ego_strength);
+
+    const erosHigh = this.engine.getVariable('libido')[2].calculate(this.libido);
+    const thanatosHigh = this.engine.getVariable('death_drive')[2].calculate(this.death_drive);
+
+    const distress = Math.max(basic.fear, basic.sadness, complex.anxiety, complex.shame);
+
+    // Repression: Triggered by high distress but a weak/moderate ego trying to cope.
+    // It pushes the emotion down, but often increases internal cortisol (anxiety).
+    const repression = Math.min(1, distress * 0.6 + egoWeak * 0.4);
+
+    // Projection: Taking internal hostility or shame and blaming the outside world.
+    // Highly correlated with low ego strength and high Thanatos (Death Drive).
+    const projection = Math.min(
+      1,
+      complex.hostility * 0.4 + complex.shame * 0.3 + thanatosHigh * 0.3,
+    );
+
+    // Sublimation: A mature defense. Taking high distress or high anger/passion
+    // and turning it into something useful. Requires high Ego Strength and high Libido.
+    const sublimation = Math.min(
+      1,
+      (basic.anger + complex.desire) * 0.3 + egoStrong * 0.4 + erosHigh * 0.3,
+    );
+
+    // Dissociation: A primitive defense against extreme trauma/fear when the Ego completely collapses.
+    const dissociation = Math.min(1, basic.fear * 0.5 + complex.burnout * 0.3 + egoWeak * 0.4);
+
+    return {
+      repression,
+      projection,
+      sublimation,
+      dissociation,
+    };
+  }
 
   /**
    * Core engine for calculating basic emotions (Primary affects).
@@ -469,15 +551,67 @@ class HumanPersonalitySimulator {
   /**
    * Processes the internal state and returns the full personality/emotion profile.
    * Formats all fractional values (0-1) into standardized percentages (0-100%).
-   * * @returns {EmotionalState} Full emotional spectrum analysis.
+   * @returns {EmotionalState} Full emotional spectrum analysis.
    */
   processEmotionalState() {
     const basic = this._calculateBasicEmotions();
     const complex = this._calculateComplexEmotions(basic);
+    const defenses = this._calculateDefenseMechanisms(basic, complex);
+
+    // PSYCHOANALYTIC MASKING: Simulating the Ego's defense mechanisms altering conscious perception.
+    let consciousBasic = { ...basic };
+    let consciousComplex = { ...complex };
+
+    // 1. REPRESSION: In reality, high repression reduces conscious manifestations of sadness and fear.
+    if (defenses.repression > 0.5) {
+      consciousBasic.sadness = Math.max(0, consciousBasic.sadness - defenses.repression * 0.4);
+      consciousBasic.fear = Math.max(0, consciousBasic.fear - defenses.repression * 0.4);
+
+      // The somatic toll of repression (pushing emotions down spikes tension):
+      consciousComplex.anxiety = Math.min(1, consciousComplex.anxiety + defenses.repression * 0.3);
+    }
+
+    // 2. PROJECTION: Displacing internal inadequacy onto others. Lowers shame, spikes external hostility.
+    if (defenses.projection > 0.5) {
+      consciousComplex.shame = Math.max(0, consciousComplex.shame - defenses.projection * 0.5);
+      consciousBasic.anger = Math.min(1, consciousBasic.anger + defenses.projection * 0.3);
+      consciousComplex.hostility = Math.min(
+        1,
+        consciousComplex.hostility + defenses.projection * 0.4,
+      );
+    }
+
+    // 3. SUBLIMATION: Channeling dark drives into productive energy. Lowers anger/frustration, increases passion.
+    if (defenses.sublimation > 0.5) {
+      consciousBasic.anger = Math.max(0, consciousBasic.anger - defenses.sublimation * 0.5);
+      consciousComplex.frustration = Math.max(
+        0,
+        consciousComplex.frustration - defenses.sublimation * 0.5,
+      );
+
+      consciousBasic.interest = Math.min(1, consciousBasic.interest + defenses.sublimation * 0.3);
+      consciousComplex.passion = Math.min(1, consciousComplex.passion + defenses.sublimation * 0.3);
+    }
+
+    // 4. DISSOCIATION: The extreme trauma response. Affective flattening (numbing) across the board.
+    if (defenses.dissociation > 0.5) {
+      const numbingFactor = 1 - defenses.dissociation * 0.8; // Retains only a small fraction of emotion
+
+      // @ts-ignore
+      Object.keys(consciousBasic).forEach((key) => (consciousBasic[key] *= numbingFactor));
+
+      // Deep depressive states and burnout often pierce through dissociation, the rest is numbed.
+      Object.keys(consciousComplex).forEach((key) => {
+        if (key !== 'burnout' && key !== 'depression') {
+          // @ts-ignore
+          consciousComplex[key] *= numbingFactor;
+        }
+      });
+    }
 
     /**
      * Internal formatter to convert raw 0-1 values into 2-decimal percentages.
-     * @template {ComplexEmotions|BasicEmotions} T
+     * @template {ComplexEmotions|BasicEmotions|DefenseMechanisms} T
      * @param {T} obj - The emotion object.
      * @returns {T} Formatted object.
      */
@@ -489,9 +623,14 @@ class HumanPersonalitySimulator {
     return {
       timestamp: new Date().toISOString(),
       internalState: this.exportData(),
+      psychologicalStructure: {
+        defenses: format(defenses),
+      },
       emotionalSpectrum: {
-        basic: format(basic),
-        complex: format(complex),
+        unconscious_raw: format(basic), // What the body actually experiences neurologically
+        conscious_experienced: format(consciousBasic), // What the ego consciously perceives
+        unconscious_complex: format(complex), // Unfiltered cognitive-emotional appraisals
+        conscious_complex: format(consciousComplex), // Appraisals after defense mechanisms distort them
       },
     };
   }
