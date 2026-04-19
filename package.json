@@ -42,6 +42,7 @@
   ],
   "scripts": {
     "test": "npm run test:mjs && npm run test:cjs && npm run test:js",
+    "test:mjs:web": "node test/express.mjs",
     "test:js": "npx babel-node test/index.js",
     "test:mjs": "node test/index.mjs",
     "test:cjs": "node test/index.cjs",
@@ -77,6 +78,16 @@
     "tslib": "^2.8.1",
     "typescript": "^5.8.3",
     "webpack": "^5.99.6",
-    "webpack-cli": "^6.0.1"
+    "webpack-cli": "^6.0.1",
+    "@rollup/plugin-json": "^6.1.0",
+    "@types/lodash": "^4.17.16",
+    "@types/node-fetch": "^2.6.12",
+    "esbuild": "^0.25.5",
+    "express": "^5.1.0",
+    "lodash": "^4.17.21",
+    "marked": "^16.0.0",
+    "safe-stable-stringify": "^2.5.0",
+    "sass": "^1.89.2",
+    "type-fest": "^5.0.1"
   }
 }
