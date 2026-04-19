@@ -1,7 +1,7 @@
 import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
- * @typedef {Object} DbReadings
+ * @typedef {Object} InternalFeelingStates
  * @property {number} serotonin
  * @property {number} dopamine
  * @property {number} cortisol
@@ -25,7 +25,7 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 /**
  * @typedef {Object} EmotionalState
  * @property {{ basic: BasicEmotions; complex: ComplexEmotions; }} emotionalSpectrum
- * @property {DbReadings} internalState
+ * @property {InternalFeelingStates} internalState
  * @property {string} timestamp
  */
 
@@ -37,6 +37,7 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 class HumanPersonalitySimulator {
   /** * Internal state representing the raw database readings.
    * Values are kept private to force the use of getters/setters.
+   * @type {InternalFeelingStates}
    */
   #state = {
     serotonin: 50, // Default neutral state
@@ -107,7 +108,7 @@ class HumanPersonalitySimulator {
   /**
    * Imports raw data from the database into the simulator's internal state.
    * Uses the setters to ensure all incoming data is validated.
-   * @param {DbReadings} dbReadings - Object containing the numeric values.
+   * @param {InternalFeelingStates} dbReadings - Object containing the numeric values.
    */
   importData(dbReadings) {
     if (!dbReadings) return;
@@ -122,7 +123,7 @@ class HumanPersonalitySimulator {
 
   /**
    * Exports the current internal raw state to be saved in a database.
-   * @returns {DbReadings} The current state object.
+   * @returns {InternalFeelingStates} The current state object.
    */
   exportData() {
     return {
