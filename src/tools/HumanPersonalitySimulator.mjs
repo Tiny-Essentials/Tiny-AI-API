@@ -21,6 +21,9 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
  * @property {number} social_judgment - Perceived negative evaluation by peers (0-100).
  * @property {number} goal_blockage - Obstacles preventing a desired outcome (0-100).
  * @property {number} future_outlook - Cognitive expectation of future events (0=Bleak, 100=Bright).
+ * @property {number} reality_testing - Capacity to differentiate internal fantasy from external reality (0-100).
+ * @property {number} identity_integration - Sense of cohesive self vs identity diffusion/emptiness (0-100).
+ * @property {number} id_pressure - Raw, unrefined impulsive drive seeking immediate discharge (0-100).
  */
 
 /**
@@ -75,9 +78,15 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 /**
  * @typedef {Object} EmotionalState
  * @property {{ unconscious_raw: BasicEmotions; conscious_experienced: BasicEmotions; unconscious_complex: ComplexEmotions; conscious_complex: ComplexEmotions; }} emotionalSpectrum
- * @property {{ defenses: DefenseMechanisms; social_posture: SocialPosture; attachment_style: AttachmentDynamics }} psychologicalStructure
+ * @property {{ structural_diagnosis: StructuralDiagnosis; object_relations: ObjectRelations; defenses: DefenseMechanisms; social_posture: SocialPosture; attachment_style: AttachmentDynamics }} psychologicalStructure
  * @property {InternalFeelingStates} internalState
  * @property {string} timestamp - ISO string of the exact moment the state was processed.
+ */
+
+/**
+ * @typedef {Object} ObjectRelations
+ * @property {number} idealization - Exaggerating the positive virtues of an object/person to protect from anxiety (0-1).
+ * @property {number} devaluation - Exaggerating the negative qualities of an object/person to protect self-esteem (0-1).
  */
 
 /**
@@ -86,6 +95,24 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
  * @property {number} projection - Attributing one's own unacceptable feelings to others (0-1).
  * @property {number} sublimation - Channeling unacceptable impulses into constructive behaviors (0-1).
  * @property {number} dissociation - Disconnecting from thoughts, feelings, or sense of identity to avoid pain (0-1).
+ * @property {number} reaction_formation - Converting unacceptable impulses into their exact opposites (0-1).
+ * @property {number} denial - Primitive refusal to accept painful reality or facts (0-1).
+ * @property {number} splitting - Dividing beliefs, people, or self into all-good or all-bad (0-1).
+ * @property {number} projective_identification - Forcing projected unacceptable feelings into another person (0-1).
+ */
+
+/**
+ * Otto Kernberg's personality organization.
+ * @typedef {'neurotic' | 'borderline' | 'psychotic'} StructuralDiagnosis
+ */
+
+/**
+ * @typedef {Object} PsychologicalStructure
+ * @property {DefenseMechanisms} defenses
+ * @property {SocialPosture} social_posture
+ * @property {AttachmentDynamics} attachment_style
+ * @property {ObjectRelations} object_relations
+ * @property {StructuralDiagnosis} structural_diagnosis
  */
 
 /**
@@ -119,6 +146,9 @@ class HumanPersonalitySimulator {
     social_judgment: 0,
     goal_blockage: 0,
     future_outlook: 50,
+    reality_testing: 90,
+    identity_integration: 80,
+    id_pressure: 40,
   };
 
   constructor() {
@@ -255,6 +285,24 @@ class HumanPersonalitySimulator {
   set futureOutlook(v) {
     this.#state.future_outlook = this.#clamp(v);
   }
+  get realityTesting() {
+    return this.#state.reality_testing;
+  }
+  set realityTesting(v) {
+    this.#state.reality_testing = this.#clamp(v);
+  }
+  get identityIntegration() {
+    return this.#state.identity_integration;
+  }
+  set identityIntegration(v) {
+    this.#state.identity_integration = this.#clamp(v);
+  }
+  get idPressure() {
+    return this.#state.id_pressure;
+  }
+  set idPressure(v) {
+    this.#state.id_pressure = this.#clamp(v);
+  }
 
   // ==========================================
   // DATA MANAGEMENT
@@ -345,6 +393,9 @@ class HumanPersonalitySimulator {
       'future_outlook',
       'social_interaction',
       'sleep_quality',
+      'reality_testing',
+      'identity_integration',
+      'id_pressure',
     ].forEach((name) => {
       this.engine.addVariable(name, defaultSets);
     });
@@ -366,10 +417,21 @@ class HumanPersonalitySimulator {
     const egoStrong = this.engine.getVariable('ego_strength')[2].calculate(this.ego_strength);
     const egoWeak = this.engine.getVariable('ego_strength')[0].calculate(this.ego_strength);
 
+    const superHigh = this.engine
+      .getVariable('superego_strength')[2]
+      .calculate(this.superego_strength);
+    const realityWeak = this.engine
+      .getVariable('reality_testing')[0]
+      .calculate(this.realityTesting);
+    const identityWeak = this.engine
+      .getVariable('identity_integration')[0]
+      .calculate(this.identityIntegration);
     const erosHigh = this.engine.getVariable('libido')[2].calculate(this.libido);
     const thanatosHigh = this.engine.getVariable('death_drive')[2].calculate(this.death_drive);
 
     const distress = Math.max(basic.fear, basic.sadness, complex.anxiety, complex.shame);
+
+    // NEUROTIC DEFENSES
 
     // Repression: Triggered by high distress but a weak/moderate ego trying to cope.
     // It pushes the emotion down, but often increases internal cortisol (anxiety).
@@ -389,10 +451,76 @@ class HumanPersonalitySimulator {
       (basic.anger + complex.desire) * 0.3 + egoStrong * 0.4 + erosHigh * 0.3,
     );
 
+    // Reaction Formation: Superego strictly forbids the impulse, forcing ego to express the opposite.
+    const reaction_formation = Math.min(
+      1,
+      complex.hostility * 0.4 + superHigh * 0.4 + egoStrong * 0.2,
+    );
+
+    // PRIMITIVE & TRAUMA DEFENSES
+
     // Dissociation: A primitive defense against extreme trauma/fear when the Ego completely collapses.
     const dissociation = Math.min(1, basic.fear * 0.5 + complex.burnout * 0.3 + egoWeak * 0.4);
 
-    return { repression, projection, sublimation, dissociation };
+    // Denial: Rejection of external reality due to overwhelming anxiety or low reality testing.
+    const denial = Math.min(1, basic.fear * 0.4 + realityWeak * 0.4 + egoWeak * 0.2);
+
+    // Splitting (Cisão): Inability to integrate good and bad. Driven by identity diffusion (Borderline core).
+    const splitting = Math.min(1, complex.anxiety * 0.3 + identityWeak * 0.5 + egoWeak * 0.2);
+
+    // Projective Identification: Projecting bad parts onto others and trying to control them.
+    const projective_identification = Math.min(
+      1,
+      complex.hostility * 0.4 + splitting * 0.4 + egoWeak * 0.2,
+    );
+
+    return {
+      repression,
+      projection,
+      sublimation,
+      dissociation,
+      reaction_formation,
+      denial,
+      splitting,
+      projective_identification,
+    };
+  }
+
+  /**
+   * Evaluates Object Relations (Klein/Kernberg)
+   * How the subject perceives others internally based on their defenses.
+   * @param {ComplexEmotions} complex
+   * @param {DefenseMechanisms} defenses
+   * @param {AttachmentDynamics} attachment
+   */
+  _calculateObjectRelations(complex, defenses, attachment) {
+    // Idealization: Craving a perfect savior. Follows splitting and anxious attachment.
+    const idealization = Math.min(
+      1,
+      defenses.splitting * 0.4 + attachment.anxious * 0.4 + complex.desire * 0.2,
+    );
+    // Devaluation: Trashing the object to protect the ego. Linked to avoidant/splitting.
+    const devaluation = Math.min(
+      1,
+      defenses.splitting * 0.4 + complex.hostility * 0.4 + attachment.avoidant * 0.2,
+    );
+
+    return { idealization, devaluation };
+  }
+
+  /**
+   * Structural Diagnosis based on Otto Kernberg's Model.
+   * Defines the overarching psychiatric functioning of the personality.
+   * @returns {StructuralDiagnosis}
+   */
+  _diagnoseStructuralOrganization() {
+    if (this.realityTesting <= 30) {
+      return 'psychotic'; // Loss of reality testing
+    } else if (this.identityIntegration <= 40 || this.ego_strength <= 40) {
+      return 'borderline'; // Reality intact, but identity diffused + primitive defenses
+    } else {
+      return 'neurotic'; // Integrated identity, mature/neurotic defenses
+    }
   }
 
   /**
@@ -663,6 +791,9 @@ class HumanPersonalitySimulator {
     const posture = this._calculateSocialPosture(basic, complex);
     const attachment = this._calculateAttachmentDynamics(basic, complex);
 
+    const objectRelations = this._calculateObjectRelations(complex, defenses, attachment);
+    const diagnosis = this._diagnoseStructuralOrganization();
+
     // PSYCHOANALYTIC MASKING: Simulating the Ego's defense mechanisms altering conscious perception.
     let consciousBasic = { ...basic };
     let consciousComplex = { ...complex };
@@ -714,9 +845,46 @@ class HumanPersonalitySimulator {
       });
     }
 
+    // 5. REACTION FORMATION: Inverting hostile feelings consciously.
+    if (defenses.reaction_formation > 0.5) {
+      consciousComplex.affection = Math.min(
+        1,
+        consciousComplex.affection + defenses.reaction_formation * 0.6,
+      );
+      consciousComplex.hostility = Math.max(
+        0,
+        consciousComplex.hostility - defenses.reaction_formation * 0.8,
+      );
+      consciousBasic.anger = Math.max(0, consciousBasic.anger - defenses.reaction_formation * 0.5);
+    }
+
+    // 6. DENIAL: Severe erasure of reality, but underlying somatic anxiety remains untouched.
+    if (defenses.denial > 0.5) {
+      consciousBasic.fear = Math.max(0, consciousBasic.fear - defenses.denial * 0.9);
+      consciousBasic.sadness = Math.max(0, consciousBasic.sadness - defenses.denial * 0.9);
+      // Notice how anxiety does NOT decrease. The body knows.
+    }
+
+    // 7. SPLITTING: Polarizing the emotional spectrum. No ambivalence is allowed.
+    if (defenses.splitting > 0.5) {
+      if (consciousComplex.love > consciousComplex.hostility) {
+        // Total idealization
+        consciousComplex.love = Math.min(1, consciousComplex.love * 1.3);
+        consciousComplex.hostility = 0;
+        consciousComplex.trust = Math.min(1, consciousComplex.trust * 1.2);
+        consciousBasic.anger = 0;
+      } else {
+        // Total devaluation
+        consciousComplex.hostility = Math.min(1, consciousComplex.hostility * 1.3);
+        consciousComplex.love = 0;
+        consciousComplex.affection = 0;
+        consciousComplex.trust = 0;
+      }
+    }
+
     /**
      * Internal formatter to convert raw 0-1 values into 2-decimal percentages.
-     * @template {ComplexEmotions|BasicEmotions|DefenseMechanisms|SocialPosture|AttachmentDynamics} T
+     * @template {ComplexEmotions|BasicEmotions|DefenseMechanisms|SocialPosture|AttachmentDynamics|ObjectRelations} T
      * @param {T} obj - The emotion object.
      * @returns {T} Formatted object.
      */
@@ -729,9 +897,11 @@ class HumanPersonalitySimulator {
       timestamp: new Date().toISOString(),
       internalState: this.exportData(),
       psychologicalStructure: {
+        structural_diagnosis: diagnosis,
         defenses: format(defenses),
         social_posture: format(posture),
         attachment_style: format(attachment),
+        object_relations: format(objectRelations),
       },
       emotionalSpectrum: {
         unconscious_raw: format(basic), // What the body actually experiences neurologically
