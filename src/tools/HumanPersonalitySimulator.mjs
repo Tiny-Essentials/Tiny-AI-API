@@ -2,6 +2,7 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
  * @typedef {Object} InternalFeelingStates
+ * @property {number} superego_strength - Internalized moral standards and strictness of conscience (0-100).
  * @property {number} ego_strength - Capacity to manage stress and tolerate frustration without psychological breakdown (0-100).
  * @property {number} libido - Life drive (Eros), creative energy, and vitality (0-100).
  * @property {number} death_drive - Destructive drive (Thanatos), repetition compulsion, and self-sabotage (0-100).
@@ -35,6 +36,7 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
  * @typedef {Object} ComplexEmotions
+ * @property {number} guilt - Deep remorse for violating internalized moral codes (0-1).
  * @property {number} longing - Melancholic desire or nostalgia (Saudade) (0-1).
  * @property {number} depression - Persistent state of low mood and aversion to activity (0-1).
  * @property {number} love - Deep affection and romantic attachment (0-1).
@@ -56,9 +58,24 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
  */
 
 /**
+ * @typedef {Object} SocialPosture
+ * @property {number} dominance - Tendency to assert control and influence over others (0-1).
+ * @property {number} submission - Tendency to yield, appease, and surrender autonomy to avoid conflict (0-1).
+ * @property {number} withdrawal - Tendency to completely avoid social contact due to overwhelm (0-1).
+ */
+
+/**
+ * @typedef {Object} AttachmentDynamics
+ * @property {number} secure - Comfortable with intimacy and autonomy (0-1).
+ * @property {number} anxious - Craves closeness but fears abandonment, high clinging behavior (0-1).
+ * @property {number} avoidant - Equates intimacy with loss of independence, emotional withdrawal (0-1).
+ * @property {number} disorganized - Desires connection but fears it due to trauma, chaotic relationships (0-1).
+ */
+
+/**
  * @typedef {Object} EmotionalState
  * @property {{ unconscious_raw: BasicEmotions; conscious_experienced: BasicEmotions; unconscious_complex: ComplexEmotions; conscious_complex: ComplexEmotions; }} emotionalSpectrum
- * @property {{ defenses: DefenseMechanisms }} psychologicalStructure
+ * @property {{ defenses: DefenseMechanisms; social_posture: SocialPosture; attachment_style: AttachmentDynamics }} psychologicalStructure
  * @property {InternalFeelingStates} internalState
  * @property {string} timestamp - ISO string of the exact moment the state was processed.
  */
@@ -83,6 +100,7 @@ class HumanPersonalitySimulator {
    * @type {InternalFeelingStates}
    */
   #state = {
+    superego_strength: 50,
     ego_strength: 50,
     libido: 50,
     death_drive: 20,
@@ -123,6 +141,12 @@ class HumanPersonalitySimulator {
     return Math.max(0, Math.min(100, Number(value) || 0));
   }
 
+  get superego_strength() {
+    return this.#state.superego_strength;
+  }
+  set superego_strength(v) {
+    this.#state.superego_strength = this.#clamp(v);
+  }
   get ego_strength() {
     return this.#state.ego_strength;
   }
@@ -308,6 +332,7 @@ class HumanPersonalitySimulator {
     ];
 
     [
+      'superego_strength',
       'ego_strength',
       'libido',
       'death_drive',
@@ -367,12 +392,81 @@ class HumanPersonalitySimulator {
     // Dissociation: A primitive defense against extreme trauma/fear when the Ego completely collapses.
     const dissociation = Math.min(1, basic.fear * 0.5 + complex.burnout * 0.3 + egoWeak * 0.4);
 
-    return {
-      repression,
-      projection,
-      sublimation,
-      dissociation,
-    };
+    return { repression, projection, sublimation, dissociation };
+  }
+
+  /**
+   * Engine for calculating Interpersonal/Social Postures.
+   * Determines how the human behaves in a group setting (Submission vs Dominance).
+   * @param {BasicEmotions} basic
+   * @param {ComplexEmotions} complex
+   * @returns {SocialPosture}
+   */
+  _calculateSocialPosture(basic, complex) {
+    const egoStrong = this.engine.getVariable('ego_strength')[2].calculate(this.ego_strength);
+    const egoWeak = this.engine.getVariable('ego_strength')[0].calculate(this.ego_strength);
+
+    const adrElevated = this.engine.getVariable('adrenaline')[1].calculate(this.adrenaline);
+    const dopHigh = this.engine.getVariable('dopamine')[2].calculate(this.dopamine);
+    const compHigh = this.engine
+      .getVariable('social_comparison')[2]
+      .calculate(this.socialComparison); // Feeling inferior
+
+    // Dominance: Requires confidence (ego), reward drive (dopamine), and assertiveness (adrenaline/anger).
+    const dominance = Math.min(
+      1,
+      egoStrong * 0.4 + dopHigh * 0.3 + (basic.anger + adrElevated) * 0.3,
+    );
+
+    // Submission (Fawning/Appeasement): Triggered when feeling inferior (high comparison),
+    // facing threat (fear), lacking defense capability (weak ego), and desperate for bonding/mercy (oxytocin).
+    const submission = Math.min(
+      1,
+      compHigh * 0.4 + basic.fear * 0.3 + egoWeak * 0.2 + complex.affection * 0.1,
+    );
+
+    // Withdrawal (Isolamento): Complete social retreat. High burnout, aversion, and depression.
+    const withdrawal = Math.min(
+      1,
+      complex.burnout * 0.4 + complex.aversion * 0.3 + complex.depression * 0.3,
+    );
+
+    return { dominance, submission, withdrawal };
+  }
+
+  /**
+   * Engine for calculating Interpersonal Attachment Styles.
+   * Based on John Bowlby's Attachment Theory. Defines how the entity bonds.
+   * @param {BasicEmotions} basic
+   * @param {ComplexEmotions} complex
+   */
+  _calculateAttachmentDynamics(basic, complex) {
+    const egoStrong = this.engine.getVariable('ego_strength')[2].calculate(this.ego_strength);
+    const oxyHigh = this.engine.getVariable('oxytocin')[2].calculate(this.oxytocin);
+    const corHigh = this.engine.getVariable('cortisol')[2].calculate(this.cortisol);
+    const distHigh = this.engine
+      .getVariable('affective_distance')[2]
+      .calculate(this.affectiveDistance);
+
+    // Secure: Trusting, emotionally available, independent.
+    const secure = Math.min(1, egoStrong * 0.5 + oxyHigh * 0.3 + complex.trust * 0.2);
+
+    // Anxious: Desperate for connection, terrified of abandonment.
+    const anxious = Math.min(1, oxyHigh * 0.4 + corHigh * 0.3 + complex.jealousy * 0.3);
+
+    // Avoidant: Distances self to avoid vulnerability.
+    const avoidant = Math.min(
+      1,
+      distHigh * 0.5 + complex.aversion * 0.3 + Math.max(0, 1 - oxyHigh) * 0.2,
+    );
+
+    // Disorganized: Wants connection but fears it (trauma response).
+    const disorganized = Math.min(
+      1,
+      basic.fear * 0.4 + complex.longing * 0.3 + complex.hostility * 0.3,
+    );
+
+    return { secure, anxious, avoidant, disorganized };
   }
 
   /**
@@ -457,6 +551,11 @@ class HumanPersonalitySimulator {
    */
   _calculateComplexEmotions(basic) {
     // Indexes: 0 = Low, 1 = Medium, 2 = High
+    const superHigh = this.engine
+      .getVariable('superego_strength')[2]
+      .calculate(this.superego_strength);
+    const thanatosHigh = this.engine.getVariable('death_drive')[2].calculate(this.death_drive);
+
     const mem = this.engine.getVariable('memory_intensity')[2].calculate(this.memoryIntensity);
     const dist = this.engine.getVariable('affective_distance')[2].calculate(this.affectiveDistance); // High distance
     const closeDist = this.engine
@@ -505,6 +604,7 @@ class HumanPersonalitySimulator {
     // Social & Ego Emotions
     const envy = Math.min(1, compHigh * 0.6 + basic.sadness * 0.2 + basic.anger * 0.2);
     const shame = Math.min(1, judgHigh * 0.6 + corHigh * 0.2 + serLow * 0.2); // Perception of judgment dropping serotonin (status)
+    const guilt = Math.min(1, superHigh * 0.5 + basic.sadness * 0.3 + thanatosHigh * 0.2);
     const jealousy = Math.min(
       1,
       compHigh * 0.3 + basic.fear * 0.3 + basic.anger * 0.2 + oxyHigh * 0.2,
@@ -527,6 +627,7 @@ class HumanPersonalitySimulator {
     const desire = Math.min(1, dopHigh * 0.5 + mem * 0.3 + serLow * 0.2); // Anticipation of reward + memory + a sense of lack (low serotonin)
 
     return {
+      guilt,
       longing,
       depression,
       love,
@@ -556,7 +657,11 @@ class HumanPersonalitySimulator {
   processEmotionalState() {
     const basic = this._calculateBasicEmotions();
     const complex = this._calculateComplexEmotions(basic);
+
+    // Core Psychological Structures
     const defenses = this._calculateDefenseMechanisms(basic, complex);
+    const posture = this._calculateSocialPosture(basic, complex);
+    const attachment = this._calculateAttachmentDynamics(basic, complex);
 
     // PSYCHOANALYTIC MASKING: Simulating the Ego's defense mechanisms altering conscious perception.
     let consciousBasic = { ...basic };
@@ -611,7 +716,7 @@ class HumanPersonalitySimulator {
 
     /**
      * Internal formatter to convert raw 0-1 values into 2-decimal percentages.
-     * @template {ComplexEmotions|BasicEmotions|DefenseMechanisms} T
+     * @template {ComplexEmotions|BasicEmotions|DefenseMechanisms|SocialPosture|AttachmentDynamics} T
      * @param {T} obj - The emotion object.
      * @returns {T} Formatted object.
      */
@@ -625,6 +730,8 @@ class HumanPersonalitySimulator {
       internalState: this.exportData(),
       psychologicalStructure: {
         defenses: format(defenses),
+        social_posture: format(posture),
+        attachment_style: format(attachment),
       },
       emotionalSpectrum: {
         unconscious_raw: format(basic), // What the body actually experiences neurologically
