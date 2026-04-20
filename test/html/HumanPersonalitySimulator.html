@@ -3,19 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PsycheSim: Emotional Dashboard</title>
+    <title>PsycheSim: Advanced Clinical Dashboard</title>
     <style>
       :root {
-        --bg-color: #121212;
-        --panel-bg: #1e1e1e;
-        --text-main: #e0e0e0;
-        --text-muted: #888;
-        --accent: #00adb5;
-        --bar-bg: #333;
+        --bg-color: #0d1117;
+        --panel-bg: #161b22;
+        --text-main: #c9d1d9;
+        --text-muted: #8b949e;
+        --accent: #58a6ff;
+        --accent-danger: #f85149;
+        --accent-warn: #d29922;
+        --accent-success: #2ea043;
+        --bar-bg: #21262d;
+        --border-color: #30363d;
       }
 
       body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         background-color: var(--bg-color);
         color: var(--text-main);
         margin: 0;
@@ -24,39 +29,81 @@
         justify-content: center;
       }
 
+      /* 3-Column Clinical Layout */
       .dashboard {
         display: grid;
-        grid-template-columns: 1fr 2fr;
+        grid-template-columns: 350px 400px 1fr;
         gap: 20px;
-        max-width: 1400px;
+        max-width: 1600px;
         width: 100%;
+        height: 95vh;
       }
 
       .panel {
         background-color: var(--panel-bg);
         padding: 20px;
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        max-height: 90vh;
+        border: 1px solid var(--border-color);
         overflow-y: auto;
+        display: flex;
+        flex-direction: column;
       }
 
       h2 {
-        border-bottom: 2px solid var(--bar-bg);
+        border-bottom: 1px solid var(--border-color);
         padding-bottom: 10px;
         margin-top: 0;
+        font-size: 1.2rem;
+        color: #fff;
+        position: sticky;
+        top: 0;
+        background: var(--panel-bg);
+        z-index: 10;
       }
 
-      /* Controles de Input (Sliders) */
+      h3 {
+        font-size: 1rem;
+        color: var(--accent);
+        margin: 20px 0 10px 0;
+        border-bottom: 1px dashed var(--border-color);
+        padding-bottom: 5px;
+      }
+
+      /* Template Selector */
+      .template-selector {
+        margin-bottom: 20px;
+        padding: 10px;
+        background: var(--bar-bg);
+        border-radius: 8px;
+        border: 1px solid var(--accent);
+      }
+      .template-selector select {
+        width: 100%;
+        padding: 8px;
+        background: var(--bg-color);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        margin-top: 5px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      /* Sliders */
       .input-group {
         margin-bottom: 15px;
       }
-
       .input-header {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 5px;
-        font-size: 0.9em;
+        margin-bottom: 8px;
+        font-size: 0.85em;
+        font-weight: bold;
+        color: var(--text-muted);
+        text-transform: capitalize;
+      }
+      .input-header span.val {
+        color: var(--accent);
       }
 
       input[type='range'] {
@@ -65,83 +112,443 @@
         accent-color: var(--accent);
       }
 
-      /* Barras de Saída (Sentimentos) */
-      .emotions-grid {
+      /* Structural Diagnosis Badge */
+      .diagnosis-box {
+        background: var(--bar-bg);
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 20px;
+        border-left: 4px solid var(--accent);
+      }
+      .diagnosis-title {
+        font-size: 0.8em;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .diagnosis-value {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin-top: 5px;
+        text-transform: capitalize;
+      }
+
+      /* Progress Bars */
+      .output-group {
+        margin-bottom: 12px;
+      }
+      .output-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8em;
+        margin-bottom: 4px;
+        text-transform: capitalize;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background-color: var(--bar-bg);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background-color: var(--accent);
+        transition: width 0.3s ease;
+        width: 0%;
+      }
+
+      /* Color Modifiers for Progress */
+      .fill-danger {
+        background-color: var(--accent-danger);
+      }
+      .fill-warn {
+        background-color: var(--accent-warn);
+      }
+      .fill-success {
+        background-color: var(--accent-success);
+      }
+      .fill-purple {
+        background-color: #bc8cff;
+      }
+
+      /* Split Columns inside panels */
+      .split-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 15px;
       }
 
-      .output-group {
-        margin-bottom: 10px;
-      }
-
-      .output-header {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.85em;
-        margin-bottom: 4px;
-      }
-
-      .progress-bar {
-        width: 100%;
-        height: 12px;
-        background-color: var(--bar-bg);
-        border-radius: 6px;
-        overflow: hidden;
-      }
-
-      .progress-fill {
-        height: 100%;
-        background-color: var(--accent);
-        transition:
-          width 0.3s ease,
-          background-color 0.3s ease;
-        width: 0%;
-      }
-
-      /* Cores baseadas na intensidade */
-      .fill-low {
-        background-color: #4caf50;
-      } /* Verde */
-      .fill-med {
-        background-color: #ffeb3b;
-      } /* Amarelo */
-      .fill-high {
-        background-color: #f44336;
-      } /* Vermelho */
-
-      /* Scrollbar customizada */
       ::-webkit-scrollbar {
-        width: 8px;
+        width: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: var(--bg-color);
+        background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: #555;
-        border-radius: 4px;
+        background: var(--border-color);
+        border-radius: 3px;
       }
     </style>
   </head>
   <body>
     <div class="dashboard">
       <div class="panel" id="inputs-panel">
-        <h2>🧠 Biological & Contextual Inputs</h2>
+        <h2>🧬 Bio-Psycho-Social Inputs</h2>
+
+        <div class="template-selector">
+          <label style="font-size: 0.85em; font-weight: bold; color: var(--text-muted)"
+            >Load Clinical Scenario:</label
+          >
+          <select id="scenario-dropdown">
+            <option value="baseline">Baseline Healthy (Neurotic-Stable)</option>
+            <option value="panic_attack">Acute Panic Attack (Anxiety)</option>
+            <option value="major_depression">Major Depressive Episode</option>
+            <option value="borderline_crisis">Borderline Splitting Crisis</option>
+            <option value="psychotic_break">Psychotic Break (Paranoid)</option>
+            <option value="burnout">Severe Burnout / Exhaustion</option>
+            <option value="falling_in_love">Falling in Love (Limerence)</option>
+            <option value="acute_grief">Acute Grief / Object Loss</option>
+            <option value="narcissistic_injury">Narcissistic Injury (Ego Threat)</option>
+          </select>
+        </div>
+
         <div id="controls-container"></div>
       </div>
 
-      <div class="panel" id="outputs-panel">
-        <h2>📊 Real-Time Emotional Spectrum</h2>
+      <div class="panel" id="structure-panel">
+        <h2>🏗️ Psychological Structure</h2>
 
-        <h3>Primary Affects (Basic)</h3>
-        <div class="emotions-grid" id="basic-emotions-container"></div>
+        <div class="diagnosis-box" id="diagnosis-container">
+          <div class="diagnosis-title">Structural Diagnosis (Kernberg)</div>
+          <div class="diagnosis-value" id="diagnosis-val" style="color: var(--accent-success)">
+            Neurotic
+          </div>
+        </div>
 
-        <h3 style="margin-top: 30px">Secondary Affects (Complex)</h3>
-        <div class="emotions-grid" id="complex-emotions-container"></div>
+        <h3>Ego Defenses</h3>
+        <div id="defenses-container"></div>
+
+        <h3>Object Relations & Attachment</h3>
+        <div class="split-grid">
+          <div id="object-relations-container"></div>
+          <div id="attachment-container"></div>
+        </div>
+
+        <h3>Social Posture</h3>
+        <div id="posture-container"></div>
+      </div>
+
+      <div class="panel" id="emotions-panel">
+        <h2>🎭 Emotional Spectrum</h2>
+
+        <p style="font-size: 0.85em; color: var(--text-muted); margin-top: 0">
+          Observe the gap between Unconscious reality (raw somatic affect) and Conscious experience
+          (filtered by Ego defenses).
+        </p>
+
+        <h3>Basic Affects</h3>
+        <div class="split-grid">
+          <div>
+            <h4 style="font-size: 0.8em; margin-bottom: 10px; color: var(--text-muted)">
+              Conscious (Experienced)
+            </h4>
+            <div id="basic-conscious-container"></div>
+          </div>
+          <div>
+            <h4 style="font-size: 0.8em; margin-bottom: 10px; color: var(--text-muted)">
+              Unconscious (Raw)
+            </h4>
+            <div id="basic-unconscious-container"></div>
+          </div>
+        </div>
+
+        <h3>Complex Affects</h3>
+        <div class="split-grid">
+          <div>
+            <h4 style="font-size: 0.8em; margin-bottom: 10px; color: var(--text-muted)">
+              Conscious Appraisals
+            </h4>
+            <div id="complex-conscious-container"></div>
+          </div>
+          <div>
+            <h4 style="font-size: 0.8em; margin-bottom: 10px; color: var(--text-muted)">
+              Unconscious Appraisals
+            </h4>
+            <div id="complex-unconscious-container"></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <script type="module" src="./HumanPersonalitySimulator.js"></script>
+    <script type="module">
+      import { HumanPersonalitySimulator } from './src/tools/HumanPersonalitySimulator.mjs';
+
+      // 1. Initialize Simulator
+      const sim = new HumanPersonalitySimulator();
+
+      // --- CLINICAL TEMPLATES ---
+      const baselineState = sim.exportData(); // Guarda os valores padrões
+
+      const clinicalTemplates = {
+        baseline: baselineState,
+        panic_attack: {
+          adrenaline: 95,
+          cortisol: 90,
+          gaba: 10,
+          ego_strength: 30,
+          reality_testing: 90,
+          social_interaction: 50,
+          future_outlook: 20,
+        },
+        major_depression: {
+          serotonin: 10,
+          dopamine: 15,
+          cortisol: 80,
+          oxytocin: 20,
+          gaba: 40,
+          future_outlook: 5,
+          sleep_quality: 20,
+          social_interaction: 10,
+          ego_strength: 40,
+          libido: 10,
+          memory_intensity: 85,
+        },
+        borderline_crisis: {
+          identity_integration: 25,
+          reality_testing: 80,
+          ego_strength: 25,
+          id_pressure: 95,
+          oxytocin: 85,
+          affective_distance: 90,
+          adrenaline: 70,
+          cortisol: 85,
+          social_judgment: 90,
+        },
+        psychotic_break: {
+          reality_testing: 15,
+          identity_integration: 20,
+          ego_strength: 10,
+          dopamine: 100,
+          adrenaline: 90,
+          cortisol: 95,
+          gaba: 10,
+          social_judgment: 100,
+          sensory_aversion: 90,
+        },
+        burnout: {
+          sleep_quality: 5,
+          cortisol: 90,
+          dopamine: 15,
+          serotonin: 30,
+          goal_blockage: 95,
+          ego_strength: 30,
+          future_outlook: 20,
+          libido: 15,
+        },
+        falling_in_love: {
+          oxytocin: 100,
+          dopamine: 95,
+          serotonin: 85,
+          libido: 95,
+          affective_distance: 5,
+          future_outlook: 95,
+          ego_strength: 70,
+        },
+        acute_grief: {
+          memory_intensity: 100,
+          affective_distance: 100,
+          oxytocin: 85,
+          serotonin: 15,
+          cortisol: 85,
+          ego_strength: 45,
+          future_outlook: 10,
+        },
+        narcissistic_injury: {
+          social_comparison: 95,
+          social_judgment: 95,
+          superego_strength: 80,
+          ego_strength: 40,
+          id_pressure: 80,
+          adrenaline: 75,
+          cortisol: 70,
+        },
+      };
+
+      // 2. DOM Elements
+      const controlsContainer = document.getElementById('controls-container');
+      const scenarioDropdown = document.getElementById('scenario-dropdown');
+
+      const diagnosisVal = document.getElementById('diagnosis-val');
+      const defensesContainer = document.getElementById('defenses-container');
+      const objectRelationsContainer = document.getElementById('object-relations-container');
+      const attachmentContainer = document.getElementById('attachment-container');
+      const postureContainer = document.getElementById('posture-container');
+
+      const basicConsciousContainer = document.getElementById('basic-conscious-container');
+      const basicUnconsciousContainer = document.getElementById('basic-unconscious-container');
+      const complexConsciousContainer = document.getElementById('complex-conscious-container');
+      const complexUnconsciousContainer = document.getElementById('complex-unconscious-container');
+
+      // Helper: Format Snake Case to Readable Text
+      const formatLabel = (str) => str.replace(/_/g, ' ');
+
+      // Helper: Determine Progress Bar Color
+      const getColorClass = (value, isDefense = false) => {
+        if (isDefense) return 'fill-purple';
+        if (value >= 75) return 'fill-danger';
+        if (value >= 40) return 'fill-warn';
+        return 'fill-success';
+      };
+
+      // 3. Build UI Controls Dynamically
+      function buildControls() {
+        const initialState = sim.exportData();
+
+        // Grouping to make the UI semantic
+        const clinicalInputs = [
+          'reality_testing',
+          'identity_integration',
+          'id_pressure',
+          'superego_strength',
+          'ego_strength',
+          'libido',
+          'death_drive',
+        ];
+        const neuroInputs = [
+          'serotonin',
+          'dopamine',
+          'cortisol',
+          'oxytocin',
+          'adrenaline',
+          'gaba',
+          'sleep_quality',
+        ];
+
+        let html = ``;
+
+        const generateSliders = (keys) => {
+          keys.forEach((key) => {
+            if (initialState[key] !== undefined) {
+              html += `
+                    <div class="input-group">
+                        <div class="input-header">
+                            <span>${formatLabel(key)}</span>
+                            <span class="val" id="val-${key}">${initialState[key]}</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="${initialState[key]}" id="input-${key}" data-key="${key}">
+                    </div>`;
+            }
+          });
+        };
+
+        html += `<h4 style="color:var(--text-muted); font-size:0.8em;">Clinical & Metapsychology</h4>`;
+        generateSliders(clinicalInputs);
+
+        html += `<h4 style="color:var(--text-muted); font-size:0.8em; margin-top:20px;">Neurobiology</h4>`;
+        generateSliders(neuroInputs);
+
+        html += `<h4 style="color:var(--text-muted); font-size:0.8em; margin-top:20px;">Context & Environment</h4>`;
+        const rest = Object.keys(initialState).filter(
+          (k) => !clinicalInputs.includes(k) && !neuroInputs.includes(k),
+        );
+        generateSliders(rest);
+
+        controlsContainer.innerHTML = html;
+
+        // Add Listeners
+        controlsContainer.querySelectorAll('input[type="range"]').forEach((slider) => {
+          slider.addEventListener('input', (e) => {
+            const key = e.target.getAttribute('data-key');
+            const val = Number(e.target.value);
+            document.getElementById(`val-${key}`).innerText = val;
+
+            // Update Simulator
+            sim.importData({ [key]: val });
+
+            // Re-render UI
+            updateUI();
+            scenarioDropdown.value = 'custom'; // Reseta o dropdown se o usuário mexer manualmente
+          });
+        });
+      }
+
+      // 4. Handle Template Selection
+      scenarioDropdown.addEventListener('change', (e) => {
+        const scenarioKey = e.target.value;
+        if (clinicalTemplates[scenarioKey]) {
+          // 1. Reseta para a base primeiro para evitar contaminação
+          sim.importData(baselineState);
+
+          // 2. Aplica o template
+          sim.importData(clinicalTemplates[scenarioKey]);
+          const newState = sim.exportData();
+
+          // 3. Atualiza os sliders na UI
+          Object.keys(newState).forEach((key) => {
+            const slider = document.getElementById(`input-${key}`);
+            const valDisplay = document.getElementById(`val-${key}`);
+            if (slider && valDisplay) {
+              slider.value = newState[key];
+              valDisplay.innerText = newState[key];
+            }
+          });
+
+          // 4. Re-calcula e re-renderiza os outputs
+          updateUI();
+        }
+      });
+
+      // 5. Render output bars
+      function renderBars(container, dataObj, colorType = 'default') {
+        let html = '';
+        for (const [key, value] of Object.entries(dataObj)) {
+          // value is 0-100 from the new processEmotionalState formatting
+          const colorClass = colorType === 'defense' ? 'fill-purple' : getColorClass(value);
+
+          html += `
+            <div class="output-group">
+                <div class="output-header">
+                    <span>${formatLabel(key)}</span>
+                    <span>${value.toFixed(1)}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill ${colorClass}" style="width: ${value}%"></div>
+                </div>
+            </div>`;
+        }
+        container.innerHTML = html;
+      }
+
+      // 6. Update Entire UI
+      function updateUI() {
+        const result = sim.processEmotionalState();
+
+        // Update Diagnosis Box
+        const diag = result.psychologicalStructure.structural_diagnosis;
+        diagnosisVal.innerText = diag;
+        if (diag === 'psychotic') diagnosisVal.style.color = 'var(--accent-danger)';
+        else if (diag === 'borderline') diagnosisVal.style.color = 'var(--accent-warn)';
+        else diagnosisVal.style.color = 'var(--accent-success)';
+
+        // Update Structure
+        renderBars(defensesContainer, result.psychologicalStructure.defenses, 'defense');
+        renderBars(objectRelationsContainer, result.psychologicalStructure.object_relations);
+        renderBars(attachmentContainer, result.psychologicalStructure.attachment_style);
+        renderBars(postureContainer, result.psychologicalStructure.social_posture);
+
+        // Update Emotions (Conscious vs Unconscious)
+        renderBars(basicConsciousContainer, result.emotionalSpectrum.conscious_experienced);
+        renderBars(basicUnconsciousContainer, result.emotionalSpectrum.unconscious_raw);
+
+        renderBars(complexConsciousContainer, result.emotionalSpectrum.conscious_complex);
+        renderBars(complexUnconsciousContainer, result.emotionalSpectrum.unconscious_complex);
+      }
+
+      // Initialize
+      buildControls();
+      updateUI();
+    </script>
   </body>
 </html>
