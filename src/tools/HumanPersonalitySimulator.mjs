@@ -2,6 +2,9 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
  * @typedef {Object} InternalFeelingStates
+ * @property {number} mindfulness - Conscious capacity to remain present, observe emotions without judgment, and self-regulate (0-100).
+ * @property {number} unprocessed_trauma - Somatic and psychological load of unresolved past traumatic events (0-100).
+ * @property {number} existential_meaning - Sense of purpose, meaning in life, and spiritual/philosophical grounding (0-100).
  * @property {number} ego_ideal - The internalized image of perfect achievement and self-worth (0-100).
  * @property {number} narcissistic_supply - Current level of external validation, admiration, and attention received (0-100).
  * @property {number} somatic_tension - Physical toll of unprocessed psychological stress, leading to fatigue (0-100).
@@ -27,16 +30,27 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
  * @property {number} reality_testing - Capacity to differentiate internal fantasy from external reality (0-100).
  * @property {number} identity_integration - Sense of cohesive self vs identity diffusion/emptiness (0-100).
  * @property {number} id_pressure - Raw, unrefined impulsive drive seeking immediate discharge (0-100).
- * --- Baseline Temperament (Big Five - Genetic/Innate) ---
  * @property {number} openness - Openness to new experiences and intellectual curiosity (0-100).
  * @property {number} conscientiousness - Self-discipline, impulse control, and goal-directed behavior (0-100).
  * @property {number} extraversion - Tendency to seek stimulation and company of others (0-100).
  * @property {number} agreeableness - Tendency to be compassionate and cooperative rather than suspicious and antagonistic (0-100).
  * @property {number} neuroticism - Tendency toward psychological stress and emotional instability (0-100).
- * --- Physiological Modulators (The Body in Now) ---
  * @property {number} fatigue - Level of physical and mental exhaustion (0-100).
  * @property {number} hunger - Caloric need, which increases irritability and impulsivity (0-100).
  * @property {number} physical_pain - Acute or chronic somatic pain, overriding higher cognitive functions (0-100).
+ */
+
+/**
+ * @typedef {Object} AutonomicNervousSystem
+ * @property {number} ventral_vagal - State of safety, social engagement, and calm connection (0-1).
+ * @property {number} sympathetic - Mobilization state for fight or flight (0-1).
+ * @property {number} dorsal_vagal - Immobilization, collapse, and freeze response due to overwhelming threat (0-1).
+ */
+
+/**
+ * @typedef {Object} CognitiveState
+ * @property {number} executive_bandwidth - Remaining prefrontal cortex capacity for logic, planning, and focus (0-1).
+ * @property {number} brain_fog - Level of cognitive impairment, confusion, and memory retrieval difficulty (0-1).
  */
 
 /**
@@ -52,8 +66,10 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
  * @typedef {Object} ComplexEmotions
+ * @property {number} angst - Existential dread, feeling of fundamental meaninglessness or void (0-1).
+ * @property {number} awe - Profound reverence mixed with wonder, often triggered by meaning/openness (0-1).
  * @property {number} playfulness - Mammalian drive for joyful engagement, exploration, and humor (0-1).
- * @property {number} humiliation - Deep psychological wound to the narcissistic core from perceived extreme degradation (0-1).
+ * @property {number} humiliation - Deep psychological wound to the narcissistic core (0-1).
  * @property {number} pride - Joy and self-satisfaction derived from living up to the Ego Ideal (0-1).
  * @property {number} guilt - Deep remorse for violating internalized moral codes (0-1).
  * @property {number} longing - Melancholic desire or nostalgia (Saudade) (0-1).
@@ -92,11 +108,23 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
  */
 
 /**
+ * @typedef {Object} PsychiatricVectors
+ * @property {number} paranoia - Delusional fear and suspicion, driven by projection and stress (0-1).
+ * @property {number} anhedonia - Complete inability to feel pleasure or interest, core of severe depression (0-1).
+ * @property {number} mania - Euphoric, hyperactive, and delusional state driven by sleep deprivation and dopamine spikes (0-1).
+ * @property {number} substance_craving - Conscious coping urge to self-medicate via addiction due to ego depletion (0-1).
+ * @property {number} somatic_symptom_load - Acute physical manifestation of psychological pain (0-1).
+ */
+
+/**
  * @typedef {Object} EmotionalState
  * @property {{ unconscious_raw: BasicEmotions; conscious_experienced: BasicEmotions; unconscious_complex: ComplexEmotions; conscious_complex: ComplexEmotions; }} emotionalSpectrum
+ * @property {PsychiatricVectors} clinical_psychiatry
  * @property {PsychologicalStructure} psychologicalStructure
  * @property {CognitiveDistortions} cognitive_distortions
  * @property {InternalFeelingStates} internalState
+ * @property {AutonomicNervousSystem} polyvagal_state
+ * @property {CognitiveState} cognition
  * @property {string} timestamp - ISO string of the exact moment the state was processed.
  */
 
@@ -169,7 +197,10 @@ class HumanPersonalitySimulator {
    * @type {InternalFeelingStates}
    */
   #state = {
+    mindfulness: 20,
     // Core Psychiatric/Metapsychological
+    unprocessed_trauma: 0,
+    existential_meaning: 50,
     superego_strength: 50,
     ego_strength: 50,
     libido: 50,
@@ -233,6 +264,12 @@ class HumanPersonalitySimulator {
     return Math.max(0, Math.min(100, Number(value) || 0));
   }
 
+  get mindfulness() {
+    return this.#state.mindfulness;
+  }
+  set mindfulness(v) {
+    this.#state.mindfulness = this.#clamp(v);
+  }
   get superego_strength() {
     return this.#state.superego_strength;
   }
@@ -275,7 +312,6 @@ class HumanPersonalitySimulator {
   set somaticTension(v) {
     this.#state.somatic_tension = this.#clamp(v);
   }
-
   get serotonin() {
     return this.#state.serotonin;
   }
@@ -312,7 +348,6 @@ class HumanPersonalitySimulator {
   set gaba(v) {
     this.#state.gaba = this.#clamp(v);
   }
-
   get memoryIntensity() {
     return this.#state.memory_intensity;
   }
@@ -385,7 +420,6 @@ class HumanPersonalitySimulator {
   set idPressure(v) {
     this.#state.id_pressure = this.#clamp(v);
   }
-
   get openness() {
     return this.#state.openness;
   }
@@ -416,7 +450,6 @@ class HumanPersonalitySimulator {
   set neuroticism(v) {
     this.#state.neuroticism = this.#clamp(v);
   }
-
   get fatigue() {
     return this.#state.fatigue;
   }
@@ -434,6 +467,18 @@ class HumanPersonalitySimulator {
   }
   set physicalPain(v) {
     this.#state.physical_pain = this.#clamp(v);
+  }
+  get unprocessedTrauma() {
+    return this.#state.unprocessed_trauma;
+  }
+  set unprocessedTrauma(v) {
+    this.#state.unprocessed_trauma = this.#clamp(v);
+  }
+  get existentialMeaning() {
+    return this.#state.existential_meaning;
+  }
+  set existentialMeaning(v) {
+    this.#state.existential_meaning = this.#clamp(v);
   }
 
   // ==========================================
@@ -530,8 +575,11 @@ class HumanPersonalitySimulator {
       'id_pressure',
       'ego_ideal',
       'narcissistic_supply',
+      'unprocessed_trauma',
+      'existential_meaning',
+      'mindfulness',
     ].forEach((name) => {
-      this.engine.addVariable(name, defaultSets);
+      if (!this.engine.hasVariable(name)) this.engine.addVariable(name, defaultSets);
     });
   }
 
@@ -540,25 +588,89 @@ class HumanPersonalitySimulator {
   // ==========================================
 
   /**
+   * Calculates the Polyvagal states based on Stephen Porges' theory.
+   * Dictates the raw physiological platform from which all psychology emerges.
+   * @returns {AutonomicNervousSystem}
+   */
+  _calculatePolyvagalState() {
+    const oxyHigh = this.engine.getVariable('oxytocin')[2].calculate(this.#state.oxytocin);
+    const gabHigh = this.engine.getVariable('gaba')[2].calculate(this.#state.gaba);
+    const adrElevated = this.engine.getVariable('adrenaline')[1].calculate(this.#state.adrenaline);
+    const corHigh = this.engine.getVariable('cortisol')[2].calculate(this.#state.cortisol);
+    const traumaHigh = this.engine
+      .getVariable('unprocessed_trauma')[2]
+      .calculate(this.#state.unprocessed_trauma);
+
+    // 1. Ventral Vagal (Safety): High Oxytocin, High GABA, Low Stress.
+    const ventral_vagal = Math.max(0, oxyHigh * 0.6 + gabHigh * 0.4 - corHigh * 0.5);
+
+    // 2. Sympathetic (Fight/Flight): Adrenaline + Cortisol overriding safety.
+    const sympathetic = Math.min(1, adrElevated * 0.6 + corHigh * 0.4);
+
+    // 3. Dorsal Vagal happens when trauma is high and sympathetic arousal collapses
+    const dorsal_vagal = Math.min(
+      1,
+      traumaHigh * 0.5 + corHigh * 0.3 + (1 - this.#state.adrenaline / 100) * 0.2,
+    );
+
+    return { ventral_vagal, sympathetic, dorsal_vagal };
+  }
+
+  /**
+   * Calculates conscious cognitive capacity. Emotion fundamentally alters logic.
+   * @param {AutonomicNervousSystem} polyvagal
+   * @param {number} burnout
+   * @returns {CognitiveState}
+   */
+  _calculateCognitiveState(polyvagal, burnout) {
+    const sleepLow = this.engine
+      .getVariable('sleep_quality')[0]
+      .calculate(this.#state.sleep_quality);
+    const fatigue = this.#state.fatigue / 100;
+
+    // Mindfulness acts as a shield to preserve bandwidth.
+    const mindfulness = this.#state.mindfulness / 100;
+
+    // Brain Fog increases with shutdown, exhaustion, and lack of sleep.
+    const brain_fog = Math.min(
+      1,
+      polyvagal.dorsal_vagal * 0.4 + burnout * 0.3 + fatigue * 0.2 + sleepLow * 0.2,
+    );
+
+    // Executive Bandwidth is destroyed by sympathetic arousal (panic) and brain fog, protected by mindfulness.
+    const penalty = Math.min(1, polyvagal.sympathetic * 0.4 + brain_fog * 0.6);
+    const executive_bandwidth = Math.max(0, Math.min(1, 1 - penalty + mindfulness * 0.3));
+
+    return { executive_bandwidth, brain_fog };
+  }
+
+  /**
    * Applies physiological modifiers.
    * Returns temporary capacity values rather than mutating the baseline state.
    */
   _applyPhysiologicalPenalties() {
     // Normalizing 0-100 to 0-1 for percentage calculation
-    const fatigue = this.fatigue / 100;
-    const hunger = this.hunger / 100;
-    const pain = this.physicalPain / 100;
+    const fatigue = this.#state.fatigue / 100;
+    const hunger = this.#state.hunger / 100;
+    const pain = this.#state.physical_pain / 100;
 
     // Hunger, pain, and fatigue severely deplete cognitive resources.
     const penalty = fatigue * 0.4 + hunger * 0.3 + pain * 0.3;
 
+    // Trauma actively depletes the Ego's base capacity to handle physiological stress
+    const traumaLoad = this.#state.unprocessed_trauma / 100;
+    const compoundedPenalty = Math.min(1, penalty + traumaLoad * 0.2);
+
     // Ego loses the capacity to contain impulses and utilize mature defenses.
-    const temporaryEgoStrength = Math.max(0, this.ego_strength - this.ego_strength * penalty);
+    const temporaryEgoStrength = Math.max(
+      0,
+      this.#state.ego_strength - this.#state.ego_strength * compoundedPenalty,
+    );
 
     // Moral tolerance (Superego) loosens when exhausted or in pain.
     const temporarySuperego = Math.max(
       0,
-      this.superego_strength - this.superego_strength * penalty,
+      this.#state.superego_strength - this.#state.superego_strength * compoundedPenalty,
     );
 
     return { temporaryEgoStrength, temporarySuperego };
@@ -571,16 +683,22 @@ class HumanPersonalitySimulator {
    */
   _calculateCognitiveDistortions(basic) {
     // Catastrophizing: Fueled by fear, high neuroticism, and high stress.
-    const neuroticism = this.neuroticism / 100;
-    const agreeableness = this.agreeableness / 100;
-    const stressLevel = this.cortisol / 100;
+    const neuroticism = this.#state.neuroticism / 100;
+    const agreeableness = this.#state.agreeableness / 100;
+    const stressLevel = this.#state.cortisol / 100;
+    const mindfulness = this.#state.mindfulness / 100; // The Antidote
 
-    const catastrophizing = Math.min(1, basic.fear * 0.4 + neuroticism * 0.4 + stressLevel * 0.2);
-
-    // Mind Reading: Driven by social anxiety/fear, low agreeableness, and neuroticism.
-    const mind_reading = Math.min(
-      1,
-      basic.fear * 0.3 + (1 - agreeableness) * 0.3 + neuroticism * 0.4,
+    // Full Attention (Mindfulness) actively reduces the ability of the mind to catastrophize
+    const catastrophizing = Math.max(
+      0,
+      Math.min(1, basic.fear * 0.4 + neuroticism * 0.4 + stressLevel * 0.2 - mindfulness * 0.5),
+    );
+    const mind_reading = Math.max(
+      0,
+      Math.min(
+        1,
+        basic.fear * 0.3 + (1 - agreeableness) * 0.3 + neuroticism * 0.4 - mindfulness * 0.4,
+      ),
     );
 
     return { catastrophizing, mind_reading };
@@ -604,13 +722,23 @@ class HumanPersonalitySimulator {
 
     const realityWeak = this.engine
       .getVariable('reality_testing')[0]
-      .calculate(this.realityTesting);
+      .calculate(this.#state.reality_testing);
     const identityWeak = this.engine
       .getVariable('identity_integration')[0]
-      .calculate(this.identityIntegration);
-    const erosHigh = this.engine.getVariable('libido')[2].calculate(this.libido);
-    const thanatosHigh = this.engine.getVariable('death_drive')[2].calculate(this.death_drive);
+      .calculate(this.#state.identity_integration);
+    const erosHigh = this.engine.getVariable('libido')[2].calculate(this.#state.libido);
 
+    // Trauma directly fuels the Death Drive and weakens Reality Testing inherently
+    const rawThanatos = Math.min(
+      100,
+      this.#state.death_drive + this.#state.unprocessed_trauma * 0.5,
+    );
+    const thanatosHigh = this.engine.getVariable('death_drive')[2].calculate(rawThanatos);
+    const traumaHigh = this.engine
+      .getVariable('unprocessed_trauma')[2]
+      .calculate(this.#state.unprocessed_trauma);
+
+    const mindfulnessBuffer = this.#state.mindfulness / 100;
     const distress = Math.max(basic.fear, basic.sadness, complex.anxiety, complex.shame);
 
     // NEUROTIC DEFENSES
@@ -621,16 +749,46 @@ class HumanPersonalitySimulator {
 
     // Projection: Taking internal hostility or shame and blaming the outside world.
     // Highly correlated with low ego strength and high Thanatos (Death Drive).
-    const projection = Math.min(
-      1,
-      complex.hostility * 0.4 + complex.shame * 0.3 + thanatosHigh * 0.3,
+    // Primitive Defenses buffered by mindfulness
+    const projection = Math.max(
+      0,
+      Math.min(1, complex.hostility * 0.4 + complex.shame * 0.3 + thanatosHigh * 0.3) -
+        mindfulnessBuffer * 0.4,
+    );
+
+    // Denial: Rejection of external reality due to overwhelming anxiety or low reality testing.
+    const denial = Math.max(
+      0,
+      Math.min(1, basic.fear * 0.4 + realityWeak * 0.4 + egoWeak * 0.2) - mindfulnessBuffer * 0.5,
+    );
+
+    // Splitting: Inability to integrate good and bad. Driven by identity diffusion (Borderline core).
+    const splitting = Math.max(
+      0,
+      Math.min(1, complex.anxiety * 0.3 + identityWeak * 0.4 + traumaHigh * 0.3) -
+        mindfulnessBuffer * 0.5,
+    );
+
+    // Projective Identification: Projecting bad parts onto others and trying to control them.
+    const projective_identification = Math.max(
+      0,
+      Math.min(1, complex.hostility * 0.4 + splitting * 0.4 + egoWeak * 0.2) -
+        mindfulnessBuffer * 0.4,
     );
 
     // Sublimation: A mature defense. Taking high distress or high anger/passion
     // and turning it into something useful. Requires high Ego Strength and high Libido.
+    // Mature defenses enhanced by mindfulness
     const sublimation = Math.min(
       1,
-      (basic.anger + complex.desire) * 0.3 + egoStrong * 0.4 + erosHigh * 0.3,
+      (basic.anger + complex.desire) * 0.3 +
+        egoStrong * 0.4 +
+        erosHigh * 0.3 +
+        mindfulnessBuffer * 0.3,
+    );
+    const humor = Math.min(
+      1,
+      basic.sadness * 0.3 + egoStrong * 0.4 + erosHigh * 0.3 + mindfulnessBuffer * 0.3,
     );
 
     // Reaction Formation: Superego strictly forbids the impulse, forcing ego to express the opposite.
@@ -641,28 +799,15 @@ class HumanPersonalitySimulator {
 
     // PRIMITIVE & TRAUMA DEFENSES
 
-    // Dissociation: A primitive defense against extreme trauma/fear when the Ego completely collapses.
-    const dissociation = Math.min(1, basic.fear * 0.5 + complex.burnout * 0.3 + egoWeak * 0.4);
-
-    // Denial: Rejection of external reality due to overwhelming anxiety or low reality testing.
-    const denial = Math.min(1, basic.fear * 0.4 + realityWeak * 0.4 + egoWeak * 0.2);
-
-    // Splitting (Cisão): Inability to integrate good and bad. Driven by identity diffusion (Borderline core).
-    const splitting = Math.min(1, complex.anxiety * 0.3 + identityWeak * 0.5 + egoWeak * 0.2);
-
-    // Projective Identification: Projecting bad parts onto others and trying to control them.
-    const projective_identification = Math.min(
+    // Dissociation is heavily anchored in Trauma now
+    const dissociation = Math.min(
       1,
-      complex.hostility * 0.4 + splitting * 0.4 + egoWeak * 0.2,
+      basic.fear * 0.4 + complex.burnout * 0.3 + traumaHigh * 0.4 + egoWeak * 0.2,
     );
-
     // Intellectualization: High intelligence/ego strength dealing with high distress by cutting off affect.
     const intellectualization = Math.min(1, complex.anxiety * 0.5 + egoStrong * 0.5);
     // Somatization: Occurs when distress is high, repression fails to calm the body, and the Ego is overwhelmed.
-    const somatization = Math.min(1, distress * 0.5 + repression * 0.3 + egoWeak * 0.2);
-
-    // Humor: Transforms pain into playfulness. Requires a strong Ego and healthy libido.
-    const humor = Math.min(1, basic.sadness * 0.3 + egoStrong * 0.4 + erosHigh * 0.3);
+    const somatization = Math.min(1, distress * 0.4 + repression * 0.3 + traumaHigh * 0.3);
 
     return {
       repression,
@@ -719,9 +864,10 @@ class HumanPersonalitySimulator {
    * Determines how the human behaves in a group setting (Submission vs Dominance).
    * @param {BasicEmotions} basic
    * @param {ComplexEmotions} complex
+   * @param {AutonomicNervousSystem} polyvagal
    * @returns {SocialPosture}
    */
-  _calculateSocialPosture(basic, complex) {
+  _calculateSocialPosture(basic, complex, polyvagal) {
     const egoStrong = this.engine.getVariable('ego_strength')[2].calculate(this.ego_strength);
     const egoWeak = this.engine.getVariable('ego_strength')[0].calculate(this.ego_strength);
 
@@ -732,23 +878,25 @@ class HumanPersonalitySimulator {
       .calculate(this.socialComparison); // Feeling inferior
 
     // Dominance: Requires confidence (ego), reward drive (dopamine), and assertiveness (adrenaline/anger).
-    const dominance = Math.min(
+    let dominance = Math.min(
       1,
       egoStrong * 0.4 + dopHigh * 0.3 + (basic.anger + adrElevated) * 0.3,
     );
+    dominance = Math.max(0, dominance - polyvagal.dorsal_vagal * 0.8);
 
     // Submission (Fawning/Appeasement): Triggered when feeling inferior (high comparison),
     // facing threat (fear), lacking defense capability (weak ego), and desperate for bonding/mercy (oxytocin).
-    const submission = Math.min(
+    let submission = Math.min(
       1,
       compHigh * 0.4 + basic.fear * 0.3 + egoWeak * 0.2 + complex.affection * 0.1,
     );
 
     // Withdrawal (Isolamento): Complete social retreat. High burnout, aversion, and depression.
-    const withdrawal = Math.min(
+    let withdrawal = Math.min(
       1,
       complex.burnout * 0.4 + complex.aversion * 0.3 + complex.depression * 0.3,
     );
+    withdrawal = Math.min(1, withdrawal + polyvagal.dorsal_vagal * 0.8); // Dorsal vagal = Collapse/Isolation
 
     return { dominance, submission, withdrawal };
   }
@@ -864,68 +1012,100 @@ class HumanPersonalitySimulator {
     // Indexes: 0 = Low, 1 = Medium, 2 = High
     const superHigh = this.engine
       .getVariable('superego_strength')[2]
-      .calculate(this.superego_strength);
-    const thanatosHigh = this.engine.getVariable('death_drive')[2].calculate(this.death_drive);
-    const erosHigh = this.engine.getVariable('libido')[2].calculate(this.libido);
+      .calculate(this.#state.superego_strength);
+    const thanatosHigh = this.engine
+      .getVariable('death_drive')[2]
+      .calculate(this.#state.death_drive);
+    const erosHigh = this.engine.getVariable('libido')[2].calculate(this.#state.libido);
 
     // Narcissistic Axis integration
-    const egoIdealHigh = this.engine.getVariable('ego_ideal')[2].calculate(this.egoIdeal);
+    const egoIdealHigh = this.engine.getVariable('ego_ideal')[2].calculate(this.#state.ego_ideal);
     const narcSupplyHigh = this.engine
       .getVariable('narcissistic_supply')[2]
-      .calculate(this.narcissisticSupply);
+      .calculate(this.#state.narcissistic_supply);
     const narcSupplyLow = this.engine
       .getVariable('narcissistic_supply')[0]
-      .calculate(this.narcissisticSupply);
+      .calculate(this.#state.narcissistic_supply);
+    const meaningHigh = this.engine
+      .getVariable('existential_meaning')[2]
+      .calculate(this.#state.existential_meaning);
+    const meaningLow = this.engine
+      .getVariable('existential_meaning')[0]
+      .calculate(this.#state.existential_meaning);
 
-    const mem = this.engine.getVariable('memory_intensity')[2].calculate(this.memoryIntensity);
-    const dist = this.engine.getVariable('affective_distance')[2].calculate(this.affectiveDistance); // High distance
+    const mem = this.engine
+      .getVariable('memory_intensity')[2]
+      .calculate(this.#state.memory_intensity);
+    const dist = this.engine
+      .getVariable('affective_distance')[2]
+      .calculate(this.#state.affective_distance); // High distance
     const closeDist = this.engine
       .getVariable('affective_distance')[0]
-      .calculate(this.affectiveDistance); // Low distance
+      .calculate(this.#state.affective_distance); // Low distance
 
-    const oxyLow = this.engine.getVariable('oxytocin')[0].calculate(this.oxytocin);
-    const oxyHigh = this.engine.getVariable('oxytocin')[2].calculate(this.oxytocin);
+    const oxyLow = this.engine.getVariable('oxytocin')[0].calculate(this.#state.oxytocin);
+    const oxyHigh = this.engine.getVariable('oxytocin')[2].calculate(this.#state.oxytocin);
 
-    const dopHigh = this.engine.getVariable('dopamine')[2].calculate(this.dopamine);
-    const dopLow = this.engine.getVariable('dopamine')[0].calculate(this.dopamine);
-    const serLow = this.engine.getVariable('serotonin')[0].calculate(this.serotonin);
-    const serHigh = this.engine.getVariable('serotonin')[2].calculate(this.serotonin);
+    const dopHigh = this.engine.getVariable('dopamine')[2].calculate(this.#state.dopamine);
+    const dopLow = this.engine.getVariable('dopamine')[0].calculate(this.#state.dopamine);
+    const serLow = this.engine.getVariable('serotonin')[0].calculate(this.#state.serotonin);
+    const serHigh = this.engine.getVariable('serotonin')[2].calculate(this.#state.serotonin);
 
-    const corHigh = this.engine.getVariable('cortisol')[2].calculate(this.cortisol);
-    const gabHigh = this.engine.getVariable('gaba')[2].calculate(this.gaba);
-    const adrSpike = this.engine.getVariable('adrenaline')[2].calculate(this.adrenaline);
+    const corHigh = this.engine.getVariable('cortisol')[2].calculate(this.#state.cortisol);
+    const gabHigh = this.engine.getVariable('gaba')[2].calculate(this.#state.gaba);
+    const adrSpike = this.engine.getVariable('adrenaline')[2].calculate(this.#state.adrenaline);
 
     const compHigh = this.engine
       .getVariable('social_comparison')[2]
-      .calculate(this.socialComparison);
-    const judgHigh = this.engine.getVariable('social_judgment')[2].calculate(this.socialJudgment);
-    const blockHigh = this.engine.getVariable('goal_blockage')[2].calculate(this.goalBlockage);
-    const futureBright = this.engine.getVariable('future_outlook')[2].calculate(this.futureOutlook);
+      .calculate(this.#state.social_comparison);
+    const judgHigh = this.engine
+      .getVariable('social_judgment')[2]
+      .calculate(this.#state.social_judgment);
+    const blockHigh = this.engine
+      .getVariable('goal_blockage')[2]
+      .calculate(this.#state.goal_blockage);
+    const futureBright = this.engine
+      .getVariable('future_outlook')[2]
+      .calculate(this.#state.future_outlook);
 
     // ==========================================
     // PSYCHOLOGICAL APPRAISALS
     // ==========================================
 
     // Narcissistic Axis & Play
+
+    // EXISTENTIAL & NEW EMOTIONS
+    const angst = Math.min(1, meaningLow * 0.6 + basic.sadness * 0.2 + corHigh * 0.2); // Void / Dread
+    const awe = Math.min(1, meaningHigh * 0.5 + (this.#state.openness / 100) * 0.3 + dopHigh * 0.2);
     const pride = Math.min(1, narcSupplyHigh * 0.4 + egoIdealHigh * 0.4 + dopHigh * 0.2);
     const humiliation = Math.min(1, judgHigh * 0.5 + narcSupplyLow * 0.3 + basic.sadness * 0.2);
     const playfulness = Math.max(0, dopHigh * 0.4 + erosHigh * 0.4 + oxyHigh * 0.2 - corHigh * 0.5);
 
     // Existing Appraisals
     const longing = Math.min(1, mem * 0.4 + dist * 0.4 + basic.sadness * 0.2);
-    const depression = Math.min(1, serLow * 0.4 + dopLow * 0.3 + basic.sadness * 0.3);
+
+    // Meaning acts as a powerful buffer against depression and burnout
+
+    const depression = Math.max(
+      0,
+      Math.min(1, serLow * 0.4 + dopLow * 0.3 + basic.sadness * 0.3 - meaningHigh * 0.3),
+    );
     const love = Math.min(1, oxyHigh * 0.5 + dopHigh * 0.3 + closeDist * 0.2);
     const anxiety = Math.min(
       1,
       corHigh * 0.5 +
-        this.engine.getVariable('gaba')[0].calculate(this.gaba) * 0.3 +
+        this.engine.getVariable('gaba')[0].calculate(this.#state.gaba) * 0.3 +
         basic.fear * 0.2,
     );
-    const burnout = Math.min(
-      1,
-      corHigh * 0.4 +
-        this.engine.getVariable('sleep_quality')[0].calculate(this.sleepQuality) * 0.4 +
-        serLow * 0.2,
+    const burnout = Math.max(
+      0,
+      Math.min(
+        1,
+        corHigh * 0.4 +
+          this.engine.getVariable('sleep_quality')[0].calculate(this.#state.sleep_quality) * 0.4 +
+          serLow * 0.2 -
+          meaningHigh * 0.2,
+      ),
     );
 
     // Social & Ego Emotions
@@ -949,11 +1129,13 @@ class HumanPersonalitySimulator {
     const compassion = Math.min(1, empathy * 0.5 + basic.sadness * 0.3 + gabHigh * 0.2); // Requires empathy, shared sadness, but enough GABA to act
 
     // Future & Motivation Emotions
-    const hope = Math.min(1, futureBright * 0.5 + dopHigh * 0.3 + serHigh * 0.2);
+    const hope = Math.min(1, futureBright * 0.5 + dopHigh * 0.3 + meaningHigh * 0.4);
     const passion = Math.min(1, adrSpike * 0.4 + dopHigh * 0.3 + oxyHigh * 0.3); // High arousal, reward, and bonding
     const desire = Math.min(1, dopHigh * 0.5 + mem * 0.3 + serLow * 0.2); // Anticipation of reward + memory + a sense of lack (low serotonin)
 
     return {
+      angst,
+      awe,
       playfulness,
       humiliation,
       pride,
@@ -980,6 +1162,54 @@ class HumanPersonalitySimulator {
   }
 
   /**
+   * Evaluates overt clinical psychiatric symptoms based on the collision of defenses, trauma, and biochemistry.
+   * @param {ComplexEmotions} complex
+   * @param {CognitiveDistortions} distortions
+   * @param {DefenseMechanisms} defenses
+   * @returns {PsychiatricVectors}
+   */
+  _calculateClinicalVectors(complex, distortions, defenses) {
+    const dopHigh = this.engine.getVariable('dopamine')[2].calculate(this.#state.dopamine);
+    const sleepLow = this.engine
+      .getVariable('sleep_quality')[0]
+      .calculate(this.#state.sleep_quality);
+    const libidoHigh = this.engine.getVariable('libido')[2].calculate(this.#state.libido);
+
+    // Paranoia: Projection + Mind Reading + High Dopamine (Salience/Pattern finding)
+    const paranoia = Math.min(
+      1,
+      defenses.projection * 0.4 + distortions.mind_reading * 0.4 + dopHigh * 0.2,
+    );
+
+    // Anhedonia: Flat dopamine + Burnout + Loss of meaning. Distinct from sadness.
+    const anhedonia = Math.min(
+      1,
+      this.engine.getVariable('dopamine')[0].calculate(this.#state.dopamine) * 0.5 +
+        complex.burnout * 0.3 +
+        complex.angst * 0.2,
+    );
+
+    // Mania: Dangerous high energy state. High dopamine, high libido, but critically low sleep and reality testing.
+    const mania = Math.min(1, dopHigh * 0.3 + libidoHigh * 0.3 + sleepLow * 0.4);
+
+    // Substance Craving: The ego is desperate to change the internal state. High stress, low dopamine, high trauma.
+    const distress = complex.anxiety + complex.depression + complex.angst;
+    const traumaHigh = this.engine
+      .getVariable('unprocessed_trauma')[2]
+      .calculate(this.#state.unprocessed_trauma);
+    const substance_craving = Math.min(
+      1,
+      (distress / 3) * 0.4 +
+        this.engine.getVariable('dopamine')[0].calculate(this.#state.dopamine) * 0.3 +
+        traumaHigh * 0.3,
+    );
+
+    const somatic_symptom_load = Math.min(1, defenses.somatization * 0.8 + complex.anxiety * 0.2);
+
+    return { paranoia, anhedonia, mania, substance_craving, somatic_symptom_load };
+  }
+
+  /**
    * Processes the internal state and returns the full personality/emotion profile.
    * Formats all fractional values (0-1) into standardized percentages (0-100%).
    * @returns {EmotionalState} Full emotional spectrum analysis.
@@ -988,6 +1218,9 @@ class HumanPersonalitySimulator {
     // 1. Core Biology
     const basic = this._calculateBasicEmotions();
     const complex = this._calculateComplexEmotions(basic);
+
+    const polyvagal_state = this._calculatePolyvagalState();
+    const cognition = this._calculateCognitiveState(polyvagal_state, complex.burnout);
 
     // 2. Immediate Physiology overrides baseline capacities
     const { temporaryEgoStrength, temporarySuperego } = this._applyPhysiologicalPenalties();
@@ -1003,9 +1236,17 @@ class HumanPersonalitySimulator {
       temporarySuperego,
     );
 
+    const clinicalVectors = this._calculateClinicalVectors(complex, distortions, defenses);
+
     // 5. Psychosocial Output
-    const posture = this._calculateSocialPosture(basic, complex);
+    const posture = this._calculateSocialPosture(basic, complex, polyvagal_state);
+
+    // Trauma infects Attachment
     const attachment = this._calculateAttachmentDynamics(basic, complex);
+    const traumaHigh = this.engine
+      .getVariable('unprocessed_trauma')[2]
+      .calculate(this.#state.unprocessed_trauma);
+    attachment.disorganized = Math.min(1, attachment.disorganized + traumaHigh * 0.5);
 
     const objectRelations = this._calculateObjectRelations(complex, defenses, attachment);
     const diagnosis = this._diagnoseStructuralOrganization();
@@ -1121,11 +1362,8 @@ class HumanPersonalitySimulator {
         1,
         consciousComplex.burnout + defenses.somatization * 0.7,
       );
-      // Increases the internal state of somatic tension in the simulation
-      this.#state.somatic_tension = Math.min(
-        100,
-        (this.#state.somatic_tension || 0) + defenses.somatization * 10,
-      );
+      // CORREÇÃO: Removido o side-effect que mutava artificialmente o banco de dados interno na linha abaixo:
+      // this.#state.somatic_tension = Math.min(100, (this.#state.somatic_tension || 0) + defenses.somatization * 10);
     }
 
     // 10. HUMOR: Reduces the impact of depression and anger through cathartic relief.
@@ -1155,7 +1393,7 @@ class HumanPersonalitySimulator {
 
     /**
      * Internal formatter to convert raw 0-1 values into 2-decimal percentages.
-     * @template {ComplexEmotions|BasicEmotions|DefenseMechanisms|SocialPosture|AttachmentDynamics|ObjectRelations|CognitiveDistortions} T
+     * @template {ComplexEmotions|BasicEmotions|DefenseMechanisms|SocialPosture|AttachmentDynamics|ObjectRelations|CognitiveDistortions|PsychiatricVectors|CognitiveState|AutonomicNervousSystem} T
      * @param {T} obj - The emotion object.
      * @returns {T} Formatted object.
      */
@@ -1168,6 +1406,9 @@ class HumanPersonalitySimulator {
       timestamp: new Date().toISOString(),
       internalState: this.exportData(),
       cognitive_distortions: format(distortions),
+      clinical_psychiatry: format(clinicalVectors),
+      polyvagal_state: format(polyvagal_state),
+      cognition: format(cognition),
       psychologicalStructure: {
         structural_diagnosis: diagnosis,
         defenses: format(defenses),

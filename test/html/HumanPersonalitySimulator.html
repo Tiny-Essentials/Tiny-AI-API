@@ -29,12 +29,12 @@
         justify-content: center;
       }
 
-      /* 3-Column Clinical Layout */
+      /* 4-Column Clinical Layout */
       .dashboard {
         display: grid;
-        grid-template-columns: 350px 400px 1fr;
+        grid-template-columns: 320px 320px 340px 1fr;
         gap: 20px;
-        max-width: 1600px;
+        max-width: 1800px;
         width: 100%;
         height: 95vh;
       }
@@ -53,7 +53,7 @@
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 10px;
         margin-top: 0;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         color: #fff;
         position: sticky;
         top: 0;
@@ -62,7 +62,7 @@
       }
 
       h3 {
-        font-size: 1rem;
+        font-size: 0.95rem;
         color: var(--accent);
         margin: 20px 0 10px 0;
         border-bottom: 1px dashed var(--border-color);
@@ -201,15 +201,18 @@
         <h2>🧬 Bio-Psycho-Social Inputs</h2>
 
         <div class="template-selector">
-          <label style="font-size: 0.85em; font-weight: bold; color: var(--text-muted)"
-            >Load Clinical Scenario:</label
-          >
+          <label style="font-size: 0.85em; font-weight: bold; color: var(--text-muted)">
+            Load Clinical Scenario:
+          </label>
           <select id="scenario-dropdown">
             <option value="baseline">Baseline Healthy (Neurotic-Stable)</option>
+            <option value="zen_coping">Zen Coping (High Stress + Mindfulness)</option>
+            <option value="ptsd_shutdown">PTSD / Dorsal Vagal Shutdown</option>
+            <option value="addiction_craving">Severe Addiction Craving</option>
             <option value="panic_attack">Acute Panic Attack (Anxiety)</option>
             <option value="major_depression">Major Depressive Episode</option>
             <option value="borderline_crisis">Borderline Splitting Crisis</option>
-            <option value="psychotic_break">Psychotic Break (Paranoid)</option>
+            <option value="psychotic_break">Psychotic Break (Paranoid/Mania)</option>
             <option value="burnout">Severe Burnout / Exhaustion</option>
             <option value="falling_in_love">Falling in Love (Limerence)</option>
             <option value="acute_grief">Acute Grief / Object Loss</option>
@@ -218,6 +221,28 @@
         </div>
 
         <div id="controls-container"></div>
+      </div>
+
+      <div class="panel" id="systems-panel">
+        <h2>🔬 Systems & Psychiatry</h2>
+
+        <h3>Autonomic Nervous System (Polyvagal)</h3>
+        <p style="font-size: 0.75em; color: var(--text-muted); margin-top: -5px">
+          The physiological platform for survival and engagement.
+        </p>
+        <div id="polyvagal-container"></div>
+
+        <h3>Cognitive State (Prefrontal Cortex)</h3>
+        <p style="font-size: 0.75em; color: var(--text-muted); margin-top: -5px">
+          Executive function availability vs. Brain Fog. Protected by Mindfulness.
+        </p>
+        <div id="cognition-container"></div>
+
+        <h3>Clinical Psychiatric Vectors</h3>
+        <p style="font-size: 0.75em; color: var(--text-muted); margin-top: -5px">
+          Severe symptomatic manifestations of psychological collapse.
+        </p>
+        <div id="clinical-container"></div>
       </div>
 
       <div class="panel" id="structure-panel">
@@ -298,105 +323,154 @@
       const sim = new HumanPersonalitySimulator();
 
       // --- CLINICAL TEMPLATES ---
-      const baselineState = sim.exportData(); // Guarda os valores padrões
+      const baselineState = sim.exportData(); // Guarda os valores padrões (Balanceado)
 
       const clinicalTemplates = {
         baseline: baselineState,
-        panic_attack: {
-          adrenaline: 95,
-          cortisol: 90,
-          gaba: 10,
-          ego_strength: 30,
-          reality_testing: 90,
-          social_interaction: 50,
-          future_outlook: 20,
-          neuroticism: 85,
-          physical_pain: 10,
+
+        zen_coping: {
+          cortisol: 95,
+          adrenaline: 85,
+          unprocessed_trauma: 40,
+          mindfulness: 100, // Escudo Executivo e Defensivo MÁXIMO
+          existential_meaning: 95,
+          ego_strength: 85,
+          oxytocin: 60,
+          physical_pain: 50,
         },
+
+        ptsd_shutdown: {
+          unprocessed_trauma: 100, // Trauma absoluto ativando o circuito Dorsal Vagal
+          adrenaline: 10, // Adrenalina colapsa, o corpo "desiste" de lutar
+          cortisol: 95, // Estresse tóxico interno continua altíssimo
+          oxytocin: 5,
+          sleep_quality: 10,
+          ego_strength: 15, // Ego colapsado
+          reality_testing: 60,
+          identity_integration: 40,
+          mindfulness: 0,
+          affective_distance: 95,
+          social_interaction: 0,
+        },
+
+        addiction_craving: {
+          dopamine: 10, // Desespero hedônico/bioquímico
+          unprocessed_trauma: 80,
+          cortisol: 90,
+          existential_meaning: 15, // Vazio impulsiona a fuga
+          ego_strength: 20,
+          id_pressure: 100, // Demanda instintiva por alívio imediato
+          sleep_quality: 30,
+          mindfulness: 5,
+        },
+
+        panic_attack: {
+          adrenaline: 100, // Hiper-Simpático
+          cortisol: 95,
+          gaba: 5, // Falha na inibição do terror
+          ego_strength: 20,
+          reality_testing: 70, // Começa a desrealizar
+          future_outlook: 5,
+          neuroticism: 90,
+          mindfulness: 5,
+          somatic_tension: 90, // Físico responde agudamente
+        },
+
         major_depression: {
-          serotonin: 10,
-          dopamine: 15,
-          cortisol: 80,
+          serotonin: 5,
+          dopamine: 10, // Anedonia profunda
+          cortisol: 85,
           oxytocin: 20,
           gaba: 40,
-          future_outlook: 5,
+          existential_meaning: 5, // Perda total de sentido (Gera Angst severo)
+          future_outlook: 0,
           sleep_quality: 20,
-          social_interaction: 10,
-          ego_strength: 40,
-          libido: 10,
-          memory_intensity: 85,
-          fatigue: 90,
-          neuroticism: 70,
+          ego_strength: 35,
+          libido: 5,
+          fatigue: 95,
+          neuroticism: 75,
+          mindfulness: 10,
         },
+
         borderline_crisis: {
-          identity_integration: 25,
+          identity_integration: 15, // Core Borderline
           reality_testing: 80,
-          ego_strength: 25,
+          unprocessed_trauma: 85,
+          ego_strength: 20,
           id_pressure: 95,
-          oxytocin: 85,
-          affective_distance: 90,
-          adrenaline: 70,
-          cortisol: 85,
+          oxytocin: 90, // Desespero ansioso por vínculo
+          affective_distance: 95, // Vínculo ameaçado ou rejeitado
+          adrenaline: 85,
+          cortisol: 90,
           social_judgment: 90,
-          neuroticism: 90,
-          agreeableness: 20,
+          mindfulness: 5,
         },
+
         psychotic_break: {
-          reality_testing: 15,
-          identity_integration: 20,
+          reality_testing: 10, // Perda com a realidade externa
+          identity_integration: 15,
           ego_strength: 10,
-          dopamine: 100,
+          dopamine: 100, // Saliência aberrante (Gera Paranoia e Mania)
           adrenaline: 90,
           cortisol: 95,
-          gaba: 10,
-          social_judgment: 100,
-          sensory_aversion: 90,
-          sleep_quality: 5,
+          gaba: 5,
+          sleep_quality: 5, // Privação extrema de sono piora a mania
+          unprocessed_trauma: 60,
+          mindfulness: 0,
         },
+
         burnout: {
           sleep_quality: 5,
           cortisol: 90,
           dopamine: 15,
           serotonin: 30,
           goal_blockage: 95,
-          ego_strength: 30,
-          future_outlook: 20,
-          libido: 15,
-          fatigue: 100,
+          existential_meaning: 15, // Burnout = Exaustão + Perda de Propósito
+          ego_strength: 25,
+          fatigue: 100, // Exaustão máxima somática
           somatic_tension: 90,
+          mindfulness: 10,
         },
+
         falling_in_love: {
-          oxytocin: 100,
-          dopamine: 95,
-          serotonin: 85,
-          libido: 95,
-          affective_distance: 5,
+          oxytocin: 100, // Fusão vincular máxima
+          dopamine: 95, // Recompensa extrema (motivação de busca)
+          serotonin: 75,
+          libido: 100, // Energia vital e sexual no topo
+          existential_meaning: 95, // Sentimento de que a vida faz total sentido
+          affective_distance: 5, // Proximidade total
           future_outlook: 95,
-          ego_strength: 70,
-          narcissistic_supply: 90,
-          playfulness: 80,
+          ego_strength: 75,
+          narcissistic_supply: 90, // Ego inflado pelo olhar do outro
+          adrenaline: 75, // O amor possui alto grau de estresse/excitação (Arousal)
+          cortisol: 60,
         },
+
         acute_grief: {
-          memory_intensity: 100,
-          affective_distance: 100,
-          oxytocin: 85,
-          serotonin: 15,
-          cortisol: 85,
-          ego_strength: 45,
-          future_outlook: 10,
-          fatigue: 60,
-        },
-        narcissistic_injury: {
-          social_comparison: 95,
-          social_judgment: 95,
-          superego_strength: 80,
+          memory_intensity: 100, // Memórias do objeto perdido dominam
+          affective_distance: 100, // Distância irreversível
+          oxytocin: 85, // O vínculo continua existindo no cérebro
+          serotonin: 15, // Tristeza profunda
+          cortisol: 90, // Dor somática
+          existential_meaning: 20, // O mundo perde o sentido temporariamente
           ego_strength: 40,
-          id_pressure: 80,
-          adrenaline: 75,
-          cortisol: 70,
-          narcissistic_supply: 5,
-          ego_ideal: 95,
-          neuroticism: 75,
+          unprocessed_trauma: 40, // O choque da perda
+          future_outlook: 10,
+          fatigue: 70,
+          mindfulness: 20,
+        },
+
+        narcissistic_injury: {
+          narcissistic_supply: 0, // Quebra total do suprimento (Ego ameaçado)
+          social_judgment: 100, // Percepção de humilhação pública
+          social_comparison: 95, // Inveja / Inferioridade
+          superego_strength: 85, // Voz punitiva esmagadora
+          ego_strength: 30, // Ego fragilizado pela exposição
+          id_pressure: 85, // Raiva narcísica buscando descarga
+          adrenaline: 85, // Preparação para atacar de volta
+          cortisol: 85,
+          existential_meaning: 30,
+          neuroticism: 80,
         },
       };
 
@@ -405,6 +479,11 @@
       const scenarioDropdown = document.getElementById('scenario-dropdown');
 
       const diagnosisVal = document.getElementById('diagnosis-val');
+
+      const polyvagalContainer = document.getElementById('polyvagal-container');
+      const cognitionContainer = document.getElementById('cognition-container');
+      const clinicalContainer = document.getElementById('clinical-container');
+
       const distortionsContainer = document.getElementById('distortions-container');
       const defensesContainer = document.getElementById('defenses-container');
       const objectRelationsContainer = document.getElementById('object-relations-container');
@@ -421,8 +500,12 @@
 
       // Helper: Determine Progress Bar Color
       const getColorClass = (value, type = 'default') => {
+        if (type === 'clinical' || type === 'distortion') return 'fill-danger';
         if (type === 'defense') return 'fill-purple';
-        if (type === 'distortion') return 'fill-danger';
+        if (type === 'polyvagal-good') return 'fill-cyan';
+        if (type === 'polyvagal-bad') return 'fill-danger';
+        if (type === 'cognition-good') return 'fill-success';
+
         if (value >= 75) return 'fill-danger';
         if (value >= 40) return 'fill-warn';
         return 'fill-success';
@@ -434,6 +517,9 @@
 
         // Semantic Grouping for the UI
         const clinicalInputs = [
+          'mindfulness',
+          'unprocessed_trauma',
+          'existential_meaning',
           'reality_testing',
           'identity_integration',
           'id_pressure',
@@ -452,7 +538,6 @@
           'somatic_tension',
           'sleep_quality',
         ];
-
         const temperamentInputs = [
           'openness',
           'conscientiousness',
@@ -460,7 +545,6 @@
           'agreeableness',
           'neuroticism',
         ];
-
         const neuroInputs = ['serotonin', 'dopamine', 'cortisol', 'oxytocin', 'adrenaline', 'gaba'];
 
         let html = ``;
@@ -469,13 +553,13 @@
           keys.forEach((key) => {
             if (initialState[key] !== undefined) {
               html += `
-                    <div class="input-group">
-                        <div class="input-header">
-                            <span>${formatLabel(key)}</span>
-                            <span class="val" id="val-${key}">${initialState[key]}</span>
-                        </div>
-                        <input type="range" min="0" max="100" value="${initialState[key]}" id="input-${key}" data-key="${key}">
-                    </div>`;
+                <div class="input-group">
+                    <div class="input-header">
+                        <span>${formatLabel(key)}</span>
+                        <span class="val" id="val-${key}">${initialState[key]}</span>
+                    </div>
+                    <input type="range" min="0" max="100" value="${initialState[key]}" id="input-${key}" data-key="${key}">
+                </div>`;
             }
           });
         };
@@ -525,14 +609,10 @@
       scenarioDropdown.addEventListener('change', (e) => {
         const scenarioKey = e.target.value;
         if (clinicalTemplates[scenarioKey]) {
-          // 1. Reset to baseline
-          sim.importData(baselineState);
+          sim.importData(baselineState); // Reset to base healthy state
+          sim.importData(clinicalTemplates[scenarioKey]); // Apply strict template overrides
 
-          // 2. Apply template
-          sim.importData(clinicalTemplates[scenarioKey]);
           const newState = sim.exportData();
-
-          // 3. Update sliders visually
           Object.keys(newState).forEach((key) => {
             const slider = document.getElementById(`input-${key}`);
             const valDisplay = document.getElementById(`val-${key}`);
@@ -541,17 +621,24 @@
               valDisplay.innerText = newState[key];
             }
           });
-
-          // 4. Update core simulation
           updateUI();
         }
       });
 
       // 5. Render output bars
-      function renderBars(container, dataObj, colorType = 'default') {
+      function renderBars(container, dataObj, colorOverride = null) {
         let html = '';
         for (const [key, value] of Object.entries(dataObj)) {
-          const colorClass = getColorClass(value, colorType);
+          // Specific hardcoded overrides for certain keys for better UX visual mapping
+          let finalColorType = colorOverride || 'default';
+          if (!colorOverride) {
+            if (key === 'ventral_vagal') finalColorType = 'polyvagal-good';
+            if (key === 'dorsal_vagal' || key === 'sympathetic') finalColorType = 'polyvagal-bad';
+            if (key === 'executive_bandwidth') finalColorType = 'cognition-good';
+            if (key === 'brain_fog') finalColorType = 'polyvagal-bad';
+          }
+
+          const colorClass = getColorClass(value, finalColorType);
 
           html += `
             <div class="output-group">
@@ -571,15 +658,6 @@
       function updateUI() {
         const result = sim.processEmotionalState();
 
-        // Sync Somatic Tension back to the slider (since Somatization modifies it)
-        const currentInternal = result.internalState;
-        const somaticSlider = document.getElementById(`input-somatic_tension`);
-        const somaticVal = document.getElementById(`val-somatic_tension`);
-        if (somaticSlider && somaticVal) {
-          somaticSlider.value = currentInternal.somatic_tension;
-          somaticVal.innerText = currentInternal.somatic_tension;
-        }
-
         // Update Diagnosis Box
         const diag = result.psychologicalStructure.structural_diagnosis;
         diagnosisVal.innerText = diag;
@@ -587,17 +665,21 @@
         else if (diag === 'borderline') diagnosisVal.style.color = 'var(--accent-warn)';
         else diagnosisVal.style.color = 'var(--accent-success)';
 
-        // Update Structure & Cognition
+        // Panel 2: Systems & Psychiatry
+        renderBars(polyvagalContainer, result.polyvagal_state);
+        renderBars(cognitionContainer, result.cognition);
+        renderBars(clinicalContainer, result.clinical_psychiatry, 'clinical');
+
+        // Panel 3: Structure
         renderBars(distortionsContainer, result.cognitive_distortions, 'distortion');
         renderBars(defensesContainer, result.psychologicalStructure.defenses, 'defense');
         renderBars(objectRelationsContainer, result.psychologicalStructure.object_relations);
         renderBars(attachmentContainer, result.psychologicalStructure.attachment_style);
         renderBars(postureContainer, result.psychologicalStructure.social_posture);
 
-        // Update Emotions (Conscious vs Unconscious)
+        // Panel 4: Emotions
         renderBars(basicConsciousContainer, result.emotionalSpectrum.conscious_experienced);
         renderBars(basicUnconsciousContainer, result.emotionalSpectrum.unconscious_raw);
-
         renderBars(complexConsciousContainer, result.emotionalSpectrum.conscious_complex);
         renderBars(complexUnconsciousContainer, result.emotionalSpectrum.unconscious_complex);
       }
