@@ -2,6 +2,9 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
  * @typedef {Object} InternalFeelingStates
+ * @property {number} ego_ideal - The internalized image of perfect achievement and self-worth (0-100).
+ * @property {number} narcissistic_supply - Current level of external validation, admiration, and attention received (0-100).
+ * @property {number} somatic_tension - Physical toll of unprocessed psychological stress, leading to fatigue (0-100).
  * @property {number} superego_strength - Internalized moral standards and strictness of conscience (0-100).
  * @property {number} ego_strength - Capacity to manage stress and tolerate frustration without psychological breakdown (0-100).
  * @property {number} libido - Life drive (Eros), creative energy, and vitality (0-100).
@@ -24,6 +27,16 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
  * @property {number} reality_testing - Capacity to differentiate internal fantasy from external reality (0-100).
  * @property {number} identity_integration - Sense of cohesive self vs identity diffusion/emptiness (0-100).
  * @property {number} id_pressure - Raw, unrefined impulsive drive seeking immediate discharge (0-100).
+ * --- Baseline Temperament (Big Five - Genetic/Innate) ---
+ * @property {number} openness - Openness to new experiences and intellectual curiosity (0-100).
+ * @property {number} conscientiousness - Self-discipline, impulse control, and goal-directed behavior (0-100).
+ * @property {number} extraversion - Tendency to seek stimulation and company of others (0-100).
+ * @property {number} agreeableness - Tendency to be compassionate and cooperative rather than suspicious and antagonistic (0-100).
+ * @property {number} neuroticism - Tendency toward psychological stress and emotional instability (0-100).
+ * --- Physiological Modulators (The Body in Now) ---
+ * @property {number} fatigue - Level of physical and mental exhaustion (0-100).
+ * @property {number} hunger - Caloric need, which increases irritability and impulsivity (0-100).
+ * @property {number} physical_pain - Acute or chronic somatic pain, overriding higher cognitive functions (0-100).
  */
 
 /**
@@ -39,6 +52,9 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
  * @typedef {Object} ComplexEmotions
+ * @property {number} playfulness - Mammalian drive for joyful engagement, exploration, and humor (0-1).
+ * @property {number} humiliation - Deep psychological wound to the narcissistic core from perceived extreme degradation (0-1).
+ * @property {number} pride - Joy and self-satisfaction derived from living up to the Ego Ideal (0-1).
  * @property {number} guilt - Deep remorse for violating internalized moral codes (0-1).
  * @property {number} longing - Melancholic desire or nostalgia (Saudade) (0-1).
  * @property {number} depression - Persistent state of low mood and aversion to activity (0-1).
@@ -46,7 +62,7 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
  * @property {number} anxiety - Anticipatory dread and somatic tension (0-1).
  * @property {number} burnout - State of emotional, physical, and mental exhaustion (0-1).
  * @property {number} envy - Resentful longing for someone else's traits/status (0-1).
- * @property {number} shame - Painful feeling of humiliation or distress (0-1).
+ * @property {number} shame - Painful feeling of humiliation or distress based on exposure (0-1).
  * @property {number} hostility - Unfriendly or antagonistic attitude (0-1).
  * @property {number} frustration - Annoyance at being hindered from a goal (0-1).
  * @property {number} aversion - Strong dislike or disinclination (0-1).
@@ -78,7 +94,8 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 /**
  * @typedef {Object} EmotionalState
  * @property {{ unconscious_raw: BasicEmotions; conscious_experienced: BasicEmotions; unconscious_complex: ComplexEmotions; conscious_complex: ComplexEmotions; }} emotionalSpectrum
- * @property {{ structural_diagnosis: StructuralDiagnosis; object_relations: ObjectRelations; defenses: DefenseMechanisms; social_posture: SocialPosture; attachment_style: AttachmentDynamics }} psychologicalStructure
+ * @property {PsychologicalStructure} psychologicalStructure
+ * @property {CognitiveDistortions} cognitive_distortions
  * @property {InternalFeelingStates} internalState
  * @property {string} timestamp - ISO string of the exact moment the state was processed.
  */
@@ -91,6 +108,9 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
 
 /**
  * @typedef {Object} DefenseMechanisms
+ * @property {number} intellectualization - Stripping emotion from an event and treating it purely analytically to avoid distress (0-1).
+ * @property {number} somatization - Converting psychological distress into physical symptoms like pain or fatigue (0-1).
+ * @property {number} humor - Mature defense: acknowledging painful realities with playfulness to discharge tension (0-1).
  * @property {number} repression - Unconscious blocking of unacceptable emotions (0-1).
  * @property {number} projection - Attributing one's own unacceptable feelings to others (0-1).
  * @property {number} sublimation - Channeling unacceptable impulses into constructive behaviors (0-1).
@@ -116,6 +136,28 @@ import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
  */
 
 /**
+ * @typedef {Object} Temperament (Big Five)
+ * @property {number} openness - Openness to new experiences and intellectual curiosity (0-1).
+ * @property {number} conscientiousness - Self-discipline, impulse control, and goal-directed behavior (0-1).
+ * @property {number} extraversion - Tendency to seek stimulation and company of others (0-1).
+ * @property {number} agreeableness - Tendency to be compassionate and cooperative rather than suspicious and antagonistic (0-1).
+ * @property {number} neuroticism - Tendency toward psychological stress and emotional instability (0-1).
+ */
+
+/**
+ * @typedef {Object} CognitiveDistortions (Immediate Conscious Processing)
+ * @property {number} catastrophizing - Exaggerating the danger or negative outcomes of a situation (0-1).
+ * @property {number} mind_reading - Assuming negative intentions or judgments from others without evidence (0-1).
+ */
+
+/**
+ * @typedef {Object} PhysiologicalState (The Body in Now)
+ * @property {number} fatigue - Level of physical and mental exhaustion (0-1).
+ * @property {number} hunger - Caloric need, which can increase irritability and impulsivity (0-1).
+ * @property {number} physical_pain - Acute or chronic somatic pain, overriding higher cognitive functions (0-1).
+ */
+
+/**
  * Advanced Human Personality and Emotion Simulation Engine
  * Uses Mamdani inference to calculate continuous emotional states mimicking neurobiological
  * and psychosocial processes. Designed for realistic psychiatric modeling.
@@ -127,16 +169,24 @@ class HumanPersonalitySimulator {
    * @type {InternalFeelingStates}
    */
   #state = {
+    // Core Psychiatric/Metapsychological
     superego_strength: 50,
     ego_strength: 50,
     libido: 50,
     death_drive: 20,
+    ego_ideal: 50,
+    narcissistic_supply: 50,
+    somatic_tension: 0,
+
+    // Neurochemical
     serotonin: 50,
     dopamine: 50,
     cortisol: 20,
     oxytocin: 50,
     adrenaline: 20,
     gaba: 50,
+
+    // Contextual/Psychosocial
     memory_intensity: 0,
     affective_distance: 50,
     social_interaction: 50,
@@ -149,6 +199,18 @@ class HumanPersonalitySimulator {
     reality_testing: 90,
     identity_integration: 80,
     id_pressure: 40,
+
+    // Temperament (Big Five)
+    openness: 50,
+    conscientiousness: 50,
+    extraversion: 50,
+    agreeableness: 50,
+    neuroticism: 50,
+
+    // Physiological Modulators
+    fatigue: 0,
+    hunger: 0,
+    physical_pain: 0,
   };
 
   constructor() {
@@ -159,7 +221,7 @@ class HumanPersonalitySimulator {
   }
 
   // ==========================================
-  // GETTERS AND SETTERS
+  // GETTERS AND SETTERS (Auto-clamped 0-100)
   // ==========================================
 
   /**
@@ -195,6 +257,25 @@ class HumanPersonalitySimulator {
   set death_drive(v) {
     this.#state.death_drive = this.#clamp(v);
   }
+  get egoIdeal() {
+    return this.#state.ego_ideal;
+  }
+  set egoIdeal(v) {
+    this.#state.ego_ideal = this.#clamp(v);
+  }
+  get narcissisticSupply() {
+    return this.#state.narcissistic_supply;
+  }
+  set narcissisticSupply(v) {
+    this.#state.narcissistic_supply = this.#clamp(v);
+  }
+  get somaticTension() {
+    return this.#state.somatic_tension;
+  }
+  set somaticTension(v) {
+    this.#state.somatic_tension = this.#clamp(v);
+  }
+
   get serotonin() {
     return this.#state.serotonin;
   }
@@ -231,6 +312,7 @@ class HumanPersonalitySimulator {
   set gaba(v) {
     this.#state.gaba = this.#clamp(v);
   }
+
   get memoryIntensity() {
     return this.#state.memory_intensity;
   }
@@ -302,6 +384,56 @@ class HumanPersonalitySimulator {
   }
   set idPressure(v) {
     this.#state.id_pressure = this.#clamp(v);
+  }
+
+  get openness() {
+    return this.#state.openness;
+  }
+  set openness(v) {
+    this.#state.openness = this.#clamp(v);
+  }
+  get conscientiousness() {
+    return this.#state.conscientiousness;
+  }
+  set conscientiousness(v) {
+    this.#state.conscientiousness = this.#clamp(v);
+  }
+  get extraversion() {
+    return this.#state.extraversion;
+  }
+  set extraversion(v) {
+    this.#state.extraversion = this.#clamp(v);
+  }
+  get agreeableness() {
+    return this.#state.agreeableness;
+  }
+  set agreeableness(v) {
+    this.#state.agreeableness = this.#clamp(v);
+  }
+  get neuroticism() {
+    return this.#state.neuroticism;
+  }
+  set neuroticism(v) {
+    this.#state.neuroticism = this.#clamp(v);
+  }
+
+  get fatigue() {
+    return this.#state.fatigue;
+  }
+  set fatigue(v) {
+    this.#state.fatigue = this.#clamp(v);
+  }
+  get hunger() {
+    return this.#state.hunger;
+  }
+  set hunger(v) {
+    this.#state.hunger = this.#clamp(v);
+  }
+  get physicalPain() {
+    return this.#state.physical_pain;
+  }
+  set physicalPain(v) {
+    this.#state.physical_pain = this.#clamp(v);
   }
 
   // ==========================================
@@ -396,6 +528,8 @@ class HumanPersonalitySimulator {
       'reality_testing',
       'identity_integration',
       'id_pressure',
+      'ego_ideal',
+      'narcissistic_supply',
     ].forEach((name) => {
       this.engine.addVariable(name, defaultSets);
     });
@@ -406,20 +540,68 @@ class HumanPersonalitySimulator {
   // ==========================================
 
   /**
+   * Applies physiological modifiers.
+   * Returns temporary capacity values rather than mutating the baseline state.
+   */
+  _applyPhysiologicalPenalties() {
+    // Normalizing 0-100 to 0-1 for percentage calculation
+    const fatigue = this.fatigue / 100;
+    const hunger = this.hunger / 100;
+    const pain = this.physicalPain / 100;
+
+    // Hunger, pain, and fatigue severely deplete cognitive resources.
+    const penalty = fatigue * 0.4 + hunger * 0.3 + pain * 0.3;
+
+    // Ego loses the capacity to contain impulses and utilize mature defenses.
+    const temporaryEgoStrength = Math.max(0, this.ego_strength - this.ego_strength * penalty);
+
+    // Moral tolerance (Superego) loosens when exhausted or in pain.
+    const temporarySuperego = Math.max(
+      0,
+      this.superego_strength - this.superego_strength * penalty,
+    );
+
+    return { temporaryEgoStrength, temporarySuperego };
+  }
+
+  /**
+   * Calculates Cognitive Distortions.
+   * @param {BasicEmotions} basic
+   * @returns {CognitiveDistortions}
+   */
+  _calculateCognitiveDistortions(basic) {
+    // Catastrophizing: Fueled by fear, high neuroticism, and high stress.
+    const neuroticism = this.neuroticism / 100;
+    const agreeableness = this.agreeableness / 100;
+    const stressLevel = this.cortisol / 100;
+
+    const catastrophizing = Math.min(1, basic.fear * 0.4 + neuroticism * 0.4 + stressLevel * 0.2);
+
+    // Mind Reading: Driven by social anxiety/fear, low agreeableness, and neuroticism.
+    const mind_reading = Math.min(
+      1,
+      basic.fear * 0.3 + (1 - agreeableness) * 0.3 + neuroticism * 0.4,
+    );
+
+    return { catastrophizing, mind_reading };
+  }
+
+  /**
    * Engine for calculating Psychoanalytic Defense Mechanisms.
-   * Defenses are mobilized when the Ego is threatened by intense basic/complex emotions,
-   * modulated by the inherent Ego Strength and Unconscious Drives.
    * @param {BasicEmotions} basic
    * @param {ComplexEmotions} complex
+   * @param {number} activeEgoStrength - Ego strength after physical penalties
+   * @param {number} activeSuperegoStrength - Superego strength after physical penalties
    * @returns {DefenseMechanisms}
    */
-  _calculateDefenseMechanisms(basic, complex) {
-    const egoStrong = this.engine.getVariable('ego_strength')[2].calculate(this.ego_strength);
-    const egoWeak = this.engine.getVariable('ego_strength')[0].calculate(this.ego_strength);
-
+  _calculateDefenseMechanisms(basic, complex, activeEgoStrength, activeSuperegoStrength) {
+    // Calculate Fuzzy Logic based on the PENALIZED values. This simulates ego depletion.
+    const egoStrong = this.engine.getVariable('ego_strength')[2].calculate(activeEgoStrength);
+    const egoWeak = this.engine.getVariable('ego_strength')[0].calculate(activeEgoStrength);
     const superHigh = this.engine
       .getVariable('superego_strength')[2]
-      .calculate(this.superego_strength);
+      .calculate(activeSuperegoStrength);
+
     const realityWeak = this.engine
       .getVariable('reality_testing')[0]
       .calculate(this.realityTesting);
@@ -474,6 +656,14 @@ class HumanPersonalitySimulator {
       complex.hostility * 0.4 + splitting * 0.4 + egoWeak * 0.2,
     );
 
+    // Intellectualization: High intelligence/ego strength dealing with high distress by cutting off affect.
+    const intellectualization = Math.min(1, complex.anxiety * 0.5 + egoStrong * 0.5);
+    // Somatization: Occurs when distress is high, repression fails to calm the body, and the Ego is overwhelmed.
+    const somatization = Math.min(1, distress * 0.5 + repression * 0.3 + egoWeak * 0.2);
+
+    // Humor: Transforms pain into playfulness. Requires a strong Ego and healthy libido.
+    const humor = Math.min(1, basic.sadness * 0.3 + egoStrong * 0.4 + erosHigh * 0.3);
+
     return {
       repression,
       projection,
@@ -483,6 +673,9 @@ class HumanPersonalitySimulator {
       denial,
       splitting,
       projective_identification,
+      intellectualization,
+      somatization,
+      humor,
     };
   }
 
@@ -514,13 +707,11 @@ class HumanPersonalitySimulator {
    * @returns {StructuralDiagnosis}
    */
   _diagnoseStructuralOrganization() {
-    if (this.realityTesting <= 30) {
+    if (this.realityTesting <= 30)
       return 'psychotic'; // Loss of reality testing
-    } else if (this.identityIntegration <= 40 || this.ego_strength <= 40) {
+    else if (this.identityIntegration <= 40 || this.ego_strength <= 40)
       return 'borderline'; // Reality intact, but identity diffused + primitive defenses
-    } else {
-      return 'neurotic'; // Integrated identity, mature/neurotic defenses
-    }
+    else return 'neurotic'; // Integrated identity, mature/neurotic defenses
   }
 
   /**
@@ -619,54 +810,46 @@ class HumanPersonalitySimulator {
     const avr = this.engine.getVariable('sensory_aversion');
     const soc = this.engine.getVariable('social_interaction');
 
-    const happinessLevel = Math.max(
-      0,
-      ser[1].calculate(this.serotonin) * 0.4 +
-        dop[2].calculate(this.dopamine) * 0.6 -
-        cor[2].calculate(this.cortisol) * 0.4,
-    );
-    const angerLevel = Math.min(
-      1,
-      cor[2].calculate(this.cortisol) * 0.5 +
-        adr[1].calculate(this.adrenaline) * 0.3 +
-        gab[0].calculate(this.gaba) * 0.2,
-    );
-    const sadnessLevel = Math.min(
-      1,
-      ser[0].calculate(this.serotonin) * 0.7 + cor[2].calculate(this.cortisol) * 0.3,
-    );
-    const fearLevel = Math.max(
-      0,
-      Math.min(
-        1,
-        adr[2].calculate(this.adrenaline) * 0.6 +
-          cor[2].calculate(this.cortisol) * 0.4 -
-          gab[2].calculate(this.gaba) * 0.5,
-      ),
-    );
-    const disgustLevel = Math.min(
-      1,
-      avr[2].calculate(this.sensoryAversion) * 0.8 + gab[0].calculate(this.gaba) * 0.2,
-    );
-    const interestLevel = Math.min(
-      1,
-      dop[2].calculate(this.dopamine) * 0.6 + adr[1].calculate(this.adrenaline) * 0.4,
-    );
-    const boredomLevel = Math.min(
-      1,
-      dop[0].calculate(this.dopamine) * 0.5 +
-        adr[0].calculate(this.adrenaline) * 0.3 +
-        soc[0].calculate(this.socialInteraction) * 0.2,
-    );
-
     return {
-      happiness: happinessLevel,
-      anger: angerLevel,
-      sadness: sadnessLevel,
-      fear: fearLevel,
-      disgust: disgustLevel,
-      interest: interestLevel,
-      boredom: boredomLevel,
+      happiness: Math.max(
+        0,
+        ser[1].calculate(this.serotonin) * 0.4 +
+          dop[2].calculate(this.dopamine) * 0.6 -
+          cor[2].calculate(this.cortisol) * 0.4,
+      ),
+      anger: Math.min(
+        1,
+        cor[2].calculate(this.cortisol) * 0.5 +
+          adr[1].calculate(this.adrenaline) * 0.3 +
+          gab[0].calculate(this.gaba) * 0.2,
+      ),
+      sadness: Math.min(
+        1,
+        ser[0].calculate(this.serotonin) * 0.7 + cor[2].calculate(this.cortisol) * 0.3,
+      ),
+      fear: Math.max(
+        0,
+        Math.min(
+          1,
+          adr[2].calculate(this.adrenaline) * 0.6 +
+            cor[2].calculate(this.cortisol) * 0.4 -
+            gab[2].calculate(this.gaba) * 0.5,
+        ),
+      ),
+      disgust: Math.min(
+        1,
+        avr[2].calculate(this.sensoryAversion) * 0.8 + gab[0].calculate(this.gaba) * 0.2,
+      ),
+      interest: Math.min(
+        1,
+        dop[2].calculate(this.dopamine) * 0.6 + adr[1].calculate(this.adrenaline) * 0.4,
+      ),
+      boredom: Math.min(
+        1,
+        dop[0].calculate(this.dopamine) * 0.5 +
+          adr[0].calculate(this.adrenaline) * 0.3 +
+          soc[0].calculate(this.socialInteraction) * 0.2,
+      ),
     };
   }
 
@@ -683,6 +866,16 @@ class HumanPersonalitySimulator {
       .getVariable('superego_strength')[2]
       .calculate(this.superego_strength);
     const thanatosHigh = this.engine.getVariable('death_drive')[2].calculate(this.death_drive);
+    const erosHigh = this.engine.getVariable('libido')[2].calculate(this.libido);
+
+    // Narcissistic Axis integration
+    const egoIdealHigh = this.engine.getVariable('ego_ideal')[2].calculate(this.egoIdeal);
+    const narcSupplyHigh = this.engine
+      .getVariable('narcissistic_supply')[2]
+      .calculate(this.narcissisticSupply);
+    const narcSupplyLow = this.engine
+      .getVariable('narcissistic_supply')[0]
+      .calculate(this.narcissisticSupply);
 
     const mem = this.engine.getVariable('memory_intensity')[2].calculate(this.memoryIntensity);
     const dist = this.engine.getVariable('affective_distance')[2].calculate(this.affectiveDistance); // High distance
@@ -713,6 +906,12 @@ class HumanPersonalitySimulator {
     // PSYCHOLOGICAL APPRAISALS
     // ==========================================
 
+    // Narcissistic Axis & Play
+    const pride = Math.min(1, narcSupplyHigh * 0.4 + egoIdealHigh * 0.4 + dopHigh * 0.2);
+    const humiliation = Math.min(1, judgHigh * 0.5 + narcSupplyLow * 0.3 + basic.sadness * 0.2);
+    const playfulness = Math.max(0, dopHigh * 0.4 + erosHigh * 0.4 + oxyHigh * 0.2 - corHigh * 0.5);
+
+    // Existing Appraisals
     const longing = Math.min(1, mem * 0.4 + dist * 0.4 + basic.sadness * 0.2);
     const depression = Math.min(1, serLow * 0.4 + dopLow * 0.3 + basic.sadness * 0.3);
     const love = Math.min(1, oxyHigh * 0.5 + dopHigh * 0.3 + closeDist * 0.2);
@@ -755,6 +954,9 @@ class HumanPersonalitySimulator {
     const desire = Math.min(1, dopHigh * 0.5 + mem * 0.3 + serLow * 0.2); // Anticipation of reward + memory + a sense of lack (low serotonin)
 
     return {
+      playfulness,
+      humiliation,
+      pride,
       guilt,
       longing,
       depression,
@@ -783,18 +985,32 @@ class HumanPersonalitySimulator {
    * @returns {EmotionalState} Full emotional spectrum analysis.
    */
   processEmotionalState() {
+    // 1. Core Biology
     const basic = this._calculateBasicEmotions();
     const complex = this._calculateComplexEmotions(basic);
 
-    // Core Psychological Structures
-    const defenses = this._calculateDefenseMechanisms(basic, complex);
+    // 2. Immediate Physiology overrides baseline capacities
+    const { temporaryEgoStrength, temporarySuperego } = this._applyPhysiologicalPenalties();
+
+    // 3. Cognitive Filters (The conscious mind running amok)
+    const distortions = this._calculateCognitiveDistortions(basic);
+
+    // 4. Defense Mechanisms (Ego trying to survive, using depleted energy)
+    const defenses = this._calculateDefenseMechanisms(
+      basic,
+      complex,
+      temporaryEgoStrength,
+      temporarySuperego,
+    );
+
+    // 5. Psychosocial Output
     const posture = this._calculateSocialPosture(basic, complex);
     const attachment = this._calculateAttachmentDynamics(basic, complex);
 
     const objectRelations = this._calculateObjectRelations(complex, defenses, attachment);
     const diagnosis = this._diagnoseStructuralOrganization();
 
-    // PSYCHOANALYTIC MASKING: Simulating the Ego's defense mechanisms altering conscious perception.
+    // PSYCHOANALYTIC MASKING: Ego's defense mechanisms + Cognitive Distortions
     let consciousBasic = { ...basic };
     let consciousComplex = { ...complex };
 
@@ -882,9 +1098,64 @@ class HumanPersonalitySimulator {
       }
     }
 
+    // 8. INTELLECTUALIZATION: The individual knows they "should" be sad or scared,
+    // but the emotion is not felt raw. It becomes sterile and logical.
+    if (defenses.intellectualization > 0.5) {
+      consciousBasic.fear = Math.max(0, consciousBasic.fear - defenses.intellectualization * 0.6);
+      consciousBasic.sadness = Math.max(
+        0,
+        consciousBasic.sadness - defenses.intellectualization * 0.6,
+      );
+      consciousBasic.anger = Math.max(0, consciousBasic.anger - defenses.intellectualization * 0.6);
+      // However, ideological or cognitive hostility may increase
+      consciousComplex.hostility = Math.min(
+        1,
+        consciousComplex.hostility + defenses.intellectualization * 0.2,
+      );
+    }
+
+    // 9. SOMATIZATION: The pain leaves the mind and goes to the body (generating fatigue and chronic tension).
+    if (defenses.somatization > 0.5) {
+      consciousBasic.sadness = Math.max(0, consciousBasic.sadness - defenses.somatization * 0.4);
+      consciousComplex.burnout = Math.min(
+        1,
+        consciousComplex.burnout + defenses.somatization * 0.7,
+      );
+      // Increases the internal state of somatic tension in the simulation
+      this.#state.somatic_tension = Math.min(
+        100,
+        (this.#state.somatic_tension || 0) + defenses.somatization * 10,
+      );
+    }
+
+    // 10. HUMOR: Reduces the impact of depression and anger through cathartic relief.
+    if (defenses.humor > 0.5) {
+      consciousComplex.depression = Math.max(0, consciousComplex.depression - defenses.humor * 0.5);
+      consciousComplex.anxiety = Math.max(0, consciousComplex.anxiety - defenses.humor * 0.4);
+    }
+
+    // 11. CATASTROPHIZING FILTER (The conscious emotion explodes beyond what the body actually feels)
+    // If the individual is catastrophizing, conscious fear becomes LARGER than biological fear.
+    if (distortions.catastrophizing > 0.5) {
+      consciousBasic.fear = Math.min(1, consciousBasic.fear * (1 + distortions.catastrophizing));
+      consciousComplex.anxiety = Math.min(
+        1,
+        consciousComplex.anxiety * (1 + distortions.catastrophizing),
+      );
+    }
+
+    // 12. MIND READING FILTER (Generates social hostility based on illusion)
+    if (distortions.mind_reading > 0.5) {
+      consciousComplex.shame = Math.min(1, consciousComplex.shame + distortions.mind_reading * 0.5);
+      consciousComplex.hostility = Math.min(
+        1,
+        consciousComplex.hostility + distortions.mind_reading * 0.4,
+      );
+    }
+
     /**
      * Internal formatter to convert raw 0-1 values into 2-decimal percentages.
-     * @template {ComplexEmotions|BasicEmotions|DefenseMechanisms|SocialPosture|AttachmentDynamics|ObjectRelations} T
+     * @template {ComplexEmotions|BasicEmotions|DefenseMechanisms|SocialPosture|AttachmentDynamics|ObjectRelations|CognitiveDistortions} T
      * @param {T} obj - The emotion object.
      * @returns {T} Formatted object.
      */
@@ -896,6 +1167,7 @@ class HumanPersonalitySimulator {
     return {
       timestamp: new Date().toISOString(),
       internalState: this.exportData(),
+      cognitive_distortions: format(distortions),
       psychologicalStructure: {
         structural_diagnosis: diagnosis,
         defenses: format(defenses),

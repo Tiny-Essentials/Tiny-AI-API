@@ -172,6 +172,9 @@
       .fill-purple {
         background-color: #bc8cff;
       }
+      .fill-cyan {
+        background-color: #39c5bb;
+      }
 
       /* Split Columns inside panels */
       .split-grid {
@@ -227,7 +230,13 @@
           </div>
         </div>
 
-        <h3>Ego Defenses</h3>
+        <h3>Cognitive Distortions (CBT)</h3>
+        <p style="font-size: 0.75em; color: var(--text-muted); margin-top: -5px">
+          Conscious amplification filters based on temperament and stress.
+        </p>
+        <div id="distortions-container"></div>
+
+        <h3>Ego Defenses (Psychoanalytic)</h3>
         <div id="defenses-container"></div>
 
         <h3>Object Relations & Attachment</h3>
@@ -301,6 +310,8 @@
           reality_testing: 90,
           social_interaction: 50,
           future_outlook: 20,
+          neuroticism: 85,
+          physical_pain: 10,
         },
         major_depression: {
           serotonin: 10,
@@ -314,6 +325,8 @@
           ego_strength: 40,
           libido: 10,
           memory_intensity: 85,
+          fatigue: 90,
+          neuroticism: 70,
         },
         borderline_crisis: {
           identity_integration: 25,
@@ -325,6 +338,8 @@
           adrenaline: 70,
           cortisol: 85,
           social_judgment: 90,
+          neuroticism: 90,
+          agreeableness: 20,
         },
         psychotic_break: {
           reality_testing: 15,
@@ -336,6 +351,7 @@
           gaba: 10,
           social_judgment: 100,
           sensory_aversion: 90,
+          sleep_quality: 5,
         },
         burnout: {
           sleep_quality: 5,
@@ -346,6 +362,8 @@
           ego_strength: 30,
           future_outlook: 20,
           libido: 15,
+          fatigue: 100,
+          somatic_tension: 90,
         },
         falling_in_love: {
           oxytocin: 100,
@@ -355,6 +373,8 @@
           affective_distance: 5,
           future_outlook: 95,
           ego_strength: 70,
+          narcissistic_supply: 90,
+          playfulness: 80,
         },
         acute_grief: {
           memory_intensity: 100,
@@ -364,6 +384,7 @@
           cortisol: 85,
           ego_strength: 45,
           future_outlook: 10,
+          fatigue: 60,
         },
         narcissistic_injury: {
           social_comparison: 95,
@@ -373,6 +394,9 @@
           id_pressure: 80,
           adrenaline: 75,
           cortisol: 70,
+          narcissistic_supply: 5,
+          ego_ideal: 95,
+          neuroticism: 75,
         },
       };
 
@@ -381,6 +405,7 @@
       const scenarioDropdown = document.getElementById('scenario-dropdown');
 
       const diagnosisVal = document.getElementById('diagnosis-val');
+      const distortionsContainer = document.getElementById('distortions-container');
       const defensesContainer = document.getElementById('defenses-container');
       const objectRelationsContainer = document.getElementById('object-relations-container');
       const attachmentContainer = document.getElementById('attachment-container');
@@ -395,8 +420,9 @@
       const formatLabel = (str) => str.replace(/_/g, ' ');
 
       // Helper: Determine Progress Bar Color
-      const getColorClass = (value, isDefense = false) => {
-        if (isDefense) return 'fill-purple';
+      const getColorClass = (value, type = 'default') => {
+        if (type === 'defense') return 'fill-purple';
+        if (type === 'distortion') return 'fill-danger';
         if (value >= 75) return 'fill-danger';
         if (value >= 40) return 'fill-warn';
         return 'fill-success';
@@ -406,25 +432,36 @@
       function buildControls() {
         const initialState = sim.exportData();
 
-        // Grouping to make the UI semantic
+        // Semantic Grouping for the UI
         const clinicalInputs = [
           'reality_testing',
           'identity_integration',
           'id_pressure',
           'superego_strength',
           'ego_strength',
+          'ego_ideal',
+          'narcissistic_supply',
           'libido',
           'death_drive',
         ];
-        const neuroInputs = [
-          'serotonin',
-          'dopamine',
-          'cortisol',
-          'oxytocin',
-          'adrenaline',
-          'gaba',
+
+        const physioInputs = [
+          'fatigue',
+          'hunger',
+          'physical_pain',
+          'somatic_tension',
           'sleep_quality',
         ];
+
+        const temperamentInputs = [
+          'openness',
+          'conscientiousness',
+          'extraversion',
+          'agreeableness',
+          'neuroticism',
+        ];
+
+        const neuroInputs = ['serotonin', 'dopamine', 'cortisol', 'oxytocin', 'adrenaline', 'gaba'];
 
         let html = ``;
 
@@ -443,15 +480,25 @@
           });
         };
 
-        html += `<h4 style="color:var(--text-muted); font-size:0.8em;">Clinical & Metapsychology</h4>`;
+        html += `<h4 style="color:var(--text-muted); font-size:0.8em; margin-top:5px; border-bottom: 1px solid var(--border-color)">Clinical & Metapsychology</h4>`;
         generateSliders(clinicalInputs);
 
-        html += `<h4 style="color:var(--text-muted); font-size:0.8em; margin-top:20px;">Neurobiology</h4>`;
+        html += `<h4 style="color:var(--text-muted); font-size:0.8em; margin-top:20px; border-bottom: 1px solid var(--border-color)">Physiological Modulators</h4>`;
+        generateSliders(physioInputs);
+
+        html += `<h4 style="color:var(--text-muted); font-size:0.8em; margin-top:20px; border-bottom: 1px solid var(--border-color)">Temperament (Big Five)</h4>`;
+        generateSliders(temperamentInputs);
+
+        html += `<h4 style="color:var(--text-muted); font-size:0.8em; margin-top:20px; border-bottom: 1px solid var(--border-color)">Neurobiology</h4>`;
         generateSliders(neuroInputs);
 
-        html += `<h4 style="color:var(--text-muted); font-size:0.8em; margin-top:20px;">Context & Environment</h4>`;
+        html += `<h4 style="color:var(--text-muted); font-size:0.8em; margin-top:20px; border-bottom: 1px solid var(--border-color)">Context & Environment</h4>`;
         const rest = Object.keys(initialState).filter(
-          (k) => !clinicalInputs.includes(k) && !neuroInputs.includes(k),
+          (k) =>
+            !clinicalInputs.includes(k) &&
+            !neuroInputs.includes(k) &&
+            !temperamentInputs.includes(k) &&
+            !physioInputs.includes(k),
         );
         generateSliders(rest);
 
@@ -469,7 +516,7 @@
 
             // Re-render UI
             updateUI();
-            scenarioDropdown.value = 'custom'; // Reseta o dropdown se o usuário mexer manualmente
+            scenarioDropdown.value = 'custom'; // Switch to custom if manually edited
           });
         });
       }
@@ -478,14 +525,14 @@
       scenarioDropdown.addEventListener('change', (e) => {
         const scenarioKey = e.target.value;
         if (clinicalTemplates[scenarioKey]) {
-          // 1. Reseta para a base primeiro para evitar contaminação
+          // 1. Reset to baseline
           sim.importData(baselineState);
 
-          // 2. Aplica o template
+          // 2. Apply template
           sim.importData(clinicalTemplates[scenarioKey]);
           const newState = sim.exportData();
 
-          // 3. Atualiza os sliders na UI
+          // 3. Update sliders visually
           Object.keys(newState).forEach((key) => {
             const slider = document.getElementById(`input-${key}`);
             const valDisplay = document.getElementById(`val-${key}`);
@@ -495,7 +542,7 @@
             }
           });
 
-          // 4. Re-calcula e re-renderiza os outputs
+          // 4. Update core simulation
           updateUI();
         }
       });
@@ -504,8 +551,7 @@
       function renderBars(container, dataObj, colorType = 'default') {
         let html = '';
         for (const [key, value] of Object.entries(dataObj)) {
-          // value is 0-100 from the new processEmotionalState formatting
-          const colorClass = colorType === 'defense' ? 'fill-purple' : getColorClass(value);
+          const colorClass = getColorClass(value, colorType);
 
           html += `
             <div class="output-group">
@@ -525,6 +571,15 @@
       function updateUI() {
         const result = sim.processEmotionalState();
 
+        // Sync Somatic Tension back to the slider (since Somatization modifies it)
+        const currentInternal = result.internalState;
+        const somaticSlider = document.getElementById(`input-somatic_tension`);
+        const somaticVal = document.getElementById(`val-somatic_tension`);
+        if (somaticSlider && somaticVal) {
+          somaticSlider.value = currentInternal.somatic_tension;
+          somaticVal.innerText = currentInternal.somatic_tension;
+        }
+
         // Update Diagnosis Box
         const diag = result.psychologicalStructure.structural_diagnosis;
         diagnosisVal.innerText = diag;
@@ -532,7 +587,8 @@
         else if (diag === 'borderline') diagnosisVal.style.color = 'var(--accent-warn)';
         else diagnosisVal.style.color = 'var(--accent-success)';
 
-        // Update Structure
+        // Update Structure & Cognition
+        renderBars(distortionsContainer, result.cognitive_distortions, 'distortion');
         renderBars(defensesContainer, result.psychologicalStructure.defenses, 'defense');
         renderBars(objectRelationsContainer, result.psychologicalStructure.object_relations);
         renderBars(attachmentContainer, result.psychologicalStructure.attachment_style);
