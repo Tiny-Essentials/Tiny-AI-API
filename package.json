@@ -10,6 +10,18 @@
     ".": {
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
+    },
+    "./TinyAiInstance": {
+      "require": "./dist/TinyAiInstance.cjs",
+      "import": "./dist/TinyAiInstance.mjs"
+    },
+    "./services/Google": {
+      "require": "./dist/services/Google.cjs",
+      "import": "./dist/services/Google.mjs"
+    },
+    "./tiny-modules/basics/objFilter": {
+      "require": "./dist/tiny-modules/basics/objFilter.cjs",
+      "import": "./dist/tiny-modules/basics/objFilter.mjs"
     }
   },
   "repository": "https://github.com/Tiny-Essentials/Tiny-AI-API.git",
