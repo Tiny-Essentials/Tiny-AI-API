@@ -1,4 +1,7 @@
-import { FuzzySet, MamdaniInferenceSystem } from 'tiny-essentials';
+import {
+  FuzzySet,
+  MamdaniInferenceSystem,
+} from '../tiny-modules/libs/TinyMamdaniInferenceSystem.mjs';
 
 /**
  * @typedef {Object} InternalFeelingStates

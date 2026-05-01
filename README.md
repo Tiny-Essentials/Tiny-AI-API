@@ -34,6 +34,37 @@ It implements a session management system to help handle multiple different bots
 
 This project was initially a simple AI application from Pony Driland repository. The AI project eventually evolved both during the development that resulted in this project that is now published by the same creator of the Pony Driland repository.
 
+## Build
+
+To get started, please install the project dependencies. It is **mandatory** to run the build command afterward to ensure the module works correctly:
+```bash
+npm install
+npm run build:essentials
+```
+
+---
+
+## 🛠️ Tiny-Essentials Fork Notice
+
+Just a quick heads-up! 🚨 The object type imports from **Tiny-Essentials** have their own dedicated storage in this project. This happens because the `tiny-essentials-fork` extracts these scripts directly into our module to keep everything standalone.
+
+To keep things organized and avoid naming conflicts, we renamed the core filter functions when exporting them. Here is a handy table showing the original Tiny-Essentials function names and how they are represented here:
+
+| Original `tiny-essentials` Function | Exported Function in this Suite |
+| :--- | :--- |
+| `checkObj` | `checkAiObj` |
+| `cloneObjTypeOrder` | `cloneAiObjTypeOrder` |
+| `extendObjType` | `extendAiObjType` |
+| `getCheckObj` | `getCheckAiObj` |
+| `objType` | `aiObjType` |
+| `reorderObjTypeOrder` | `reorderAiObjTypeOrder` |
+
+📦 **Direct Access:** Good news! Our `package.json` is fully adapted with `exports`, meaning you can access these functions directly from the native file if you need to, like this:
+
+```javascript
+import { checkCryptoObj } from 'tiny-ai-api/tiny-modules/basics/objFilter';
+```
+
 ---
 
 ## Limitations
