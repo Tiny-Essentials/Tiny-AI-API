@@ -62,7 +62,7 @@ To keep things organized and avoid naming conflicts, we renamed the core filter 
 📦 **Direct Access:** Good news! Our `package.json` is fully adapted with `exports`, meaning you can access these functions directly from the native file if you need to, like this:
 
 ```javascript
-import { checkCryptoObj } from 'tiny-ai-api/tiny-modules/basics/objFilter';
+import { checkAiObj } from 'tiny-ai-api/tiny-modules/basics/objFilter';
 ```
 
 ---
