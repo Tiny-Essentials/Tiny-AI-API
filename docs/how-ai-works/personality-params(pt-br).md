@@ -147,3 +147,63 @@
 | **Presence Penalty** | 0.20 | 0.15 - 0.30 |
 | **Repeat Penalty** | 1.02 | 1.00 - 1.05 |
 | *A dinâmica: Muito similar a uma "conversa normal", mas com um pouco mais de liberdade (Top P) para que a IA possa escolher adjetivos acolhedores e variar as formas de concordar e validar o interlocutor.* |  |  |
+
+### 11. Construção de Justificativas e Argumentação Lógica
+
+*Foco: Defender um ponto de vista ou explicar o "porquê" de uma decisão de forma linear e inquebrável. A IA deve conectar causa e efeito sem se perder no meio do caminho.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.40 | 0.30 - 0.50 |
+| **Top K** | 30 | 20 - 40 |
+| **Top P** | 0.70 | 0.60 - 0.80 |
+| **Min P** | 0.08 | 0.05 - 0.10 |
+| **Frequency Penalty** | 0.15 | 0.10 - 0.25 |
+| **Presence Penalty** | 0.10 | 0.05 - 0.20 |
+| **Repeat Penalty** | 1.05 | 1.02 - 1.08 |
+| *A dinâmica: O Frequency Penalty ligeiramente elevado é crucial aqui. Ele impede que a IA justifique algo usando a mesma premissa repetidas vezes com palavras diferentes, forçando-a a buscar novos argumentos estruturados.* |  |  |
+
+### 12. Comunicação Social Transparente (Mediação e Explicação de Intenções)
+
+*Foco: Traduzir interações sociais confusas em análises literais e diretas. A IA precisa decodificar o que foi dito, manter a empatia, mas entregar a informação sem ambiguidades, ironias ou entrelinhas.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.45 | 0.35 - 0.55 |
+| **Top K** | 35 | 25 - 45 |
+| **Top P** | 0.75 | 0.65 - 0.85 |
+| **Min P** | 0.05 | 0.04 - 0.08 |
+| **Frequency Penalty** | 0.10 | 0.05 - 0.15 |
+| **Presence Penalty** | 0.15 | 0.10 - 0.20 |
+| **Repeat Penalty** | 1.00 | 1.00 |
+| *A dinâmica: Uma configuração equilibrada. É quente o suficiente para soar acolhedora e humana, mas fria o suficiente para não inventar emoções que não estão ali. A linguagem resultante é factual, reconfortante e fácil de processar.* |  |  |
+
+### 13. Interações Sociais com Ironia e Humor Indireto
+
+*Foco: O completo oposto do cenário anterior. A IA precisa entender e gerar sarcasmo, duplos sentidos e ler nas entrelinhas para criar interações sociais complexas ou diálogos de personagens mais cínicos.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.85 | 0.75 - 0.95 |
+| **Top K** | 55 | 45 - 65 |
+| **Top P** | 0.90 | 0.85 - 0.95 |
+| **Min P** | 0.05 | 0.02 - 0.08 |
+| **Frequency Penalty** | 0.30 | 0.20 - 0.40 |
+| **Presence Penalty** | 0.40 | 0.30 - 0.50 |
+| **Repeat Penalty** | 1.08 | 1.05 - 1.12 |
+| *A dinâmica: Requer alta temperatura para "quebrar a expectativa" matemática da próxima palavra (que é a base do humor e do sarcasmo), combinada com penalidades altas para manter as tiradas originais.* |  |  |
+
+### 14. Simulação de Mentoria e Conselhos Práticos
+
+*Foco: Direcionamento focado em ação. A IA adota uma postura de parceria experiente: encorajadora, mas totalmente ancorada em passos práticos e na realidade (sem positividade tóxica ou excesso de emoção).*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.50 | 0.40 - 0.60 |
+| **Top K** | 35 | 25 - 45 |
+| **Top P** | 0.75 | 0.65 - 0.85 |
+| **Min P** | 0.08 | 0.05 - 0.10 |
+| **Frequency Penalty** | 0.10 | 0.05 - 0.15 |
+| **Presence Penalty** | 0.10 | 0.05 - 0.20 |
+| **Repeat Penalty** | 1.02 | 1.00 - 1.05 |
+| *A dinâmica: Mantém a conversa nos trilhos. A IA fornecerá listas, passos e conselhos lógicos, utilizando um tom amigável, mas focado exclusivamente na resolução de problemas.* |  |  |

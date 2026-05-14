@@ -72,3 +72,48 @@
 | **Presence Penalty** | 0.30 | 0.20 - 0.40 |
 | **Repeat Penalty** | 1.05 | 1.02 - 1.08 |
 | *A dinâmica: Acima de 1.50 de temperatura na maioria dos modelos, a IA começa a perder a capacidade de formar frases coerentes. Este perfil explora esse limite, forçando associações de ideias muito distantes umas das outras.* |  |  |
+
+### 6. Geração de JSON de MIDI (Estruturas Musicais)
+
+*Foco: É uma mistura perigosa entre código estrito e dados artísticos. A estrutura JSON não pode quebrar de forma alguma, mas a IA precisa de uma levíssima margem para calcular tempos (ticks), durações e velocidades de notas com alguma musicalidade (como as variações de intensidade em um solo de violino, por exemplo).*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.15 | 0.10 - 0.20 |
+| **Top K** | 15 | 10 - 20 |
+| **Top P** | 0.25 | 0.15 - 0.35 |
+| **Min P** | 0.05 | 0.02 - 0.05 |
+| **Frequency Penalty** | 0.00 | 0.00 |
+| **Presence Penalty** | 0.00 | 0.00 |
+| **Repeat Penalty** | 1.00 | 1.00 |
+| *A dinâmica: Quase idêntico à programação pura, mas com uma temperatura microscópica e um Top P levemente maior para permitir que a IA escolha valores numéricos diferentes para a dinâmica das notas, mantendo as penalidades em zero absoluto para não corromper os arrays e chaves do JSON.* |  |  |
+
+### 7. Criação de Prompts para Geração de Imagens (Stable Diffusion / InvokeAI)
+
+*Foco: Linguagem baseada em tags ou descrições ricas, sem conectivos desnecessários. A IA deve focar em peso visual, paletas de cores específicas (como olhos rosa choque ou pelagens brancas) e detalhes precisos de composição.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.70 | 0.60 - 0.80 |
+| **Top K** | 45 | 35 - 55 |
+| **Top P** | 0.85 | 0.80 - 0.90 |
+| **Min P** | 0.05 | 0.03 - 0.08 |
+| **Frequency Penalty** | 0.20 | 0.10 - 0.30 |
+| **Presence Penalty** | 0.30 | 0.20 - 0.40 |
+| **Repeat Penalty** | 1.05 | 1.02 - 1.08 |
+| *A dinâmica: Queremos vocabulário rico, mas sem alucinações que quebrem a anatomia do prompt. As penalidades de presença garantem que a IA adicione novos elementos (iluminação, estilo, ambiente) em vez de repetir exaustivamente a mesma tag principal.* |  |  |
+
+### 8. Descrição Técnica de Objetos, Imagens e Lore Físico
+
+*Foco: Explicar "o que é e como funciona" com literalidade absoluta e clareza anatômica. Ideal para descrever o funcionamento interno de algo, a lógica de um cenário ou as características físicas detalhadas de um objeto/personagem, sem floreios poéticos.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.30 | 0.20 - 0.40 |
+| **Top K** | 25 | 15 - 35 |
+| **Top P** | 0.60 | 0.50 - 0.70 |
+| **Min P** | 0.10 | 0.08 - 0.15 |
+| **Frequency Penalty** | 0.05 | 0.00 - 0.10 |
+| **Presence Penalty** | 0.10 | 0.00 - 0.15 |
+| **Repeat Penalty** | 1.02 | 1.00 - 1.04 |
+| *A dinâmica: Temperatura baixa para manter os fatos coerentes e um Min P alto para descartar palavras que causem ambiguidade. O texto deve ser tão claro que não deixe margem para dupla interpretação.* |  |  |
