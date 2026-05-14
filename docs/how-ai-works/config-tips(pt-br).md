@@ -151,3 +151,80 @@
 | **Frequency Penalty** | 0.20 | 0.10 - 0.30 |
 | **Presence Penalty** | 0.20 | 0.10 - 0.30 |
 | **Repeat Penalty** | 1.05 | 1.02 - 1.08 |
+
+---
+
+### 12. Geração de Prompts Estruturados (Artes Visuais e Música)
+
+*Foco: Mistura de precisão técnica com vocabulário evocativo. Ideal para gerar comandos detalhados para outras IAs (como descrever a estética de personagens em escalas específicas ou estruturar as camadas de uma trilha sonora de boss theme com rock gótico e orquestra).*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.75 | 0.65 - 0.85 |
+| **Top K** | 40 | 30 - 50 |
+| **Top P** | 0.85 | 0.80 - 0.90 |
+| **Min P** | 0.05 | 0.02 - 0.08 |
+| **Frequency Penalty** | 0.10 | 0.00 - 0.20 |
+| **Presence Penalty** | 0.20 | 0.10 - 0.30 |
+| **Repeat Penalty** | 1.05 | 1.00 - 1.08 |
+| *A dinâmica: A IA precisa ter liberdade para usar adjetivos ricos, mas não pode divagar a ponto de esquecer as restrições técnicas do prompt (como iluminação, estilo ou instrumentos musicais específicos como solos de violino).* |  |  |
+
+### 13. Escrita de Roteiros e Scripts de Diálogo
+
+*Foco: Manter a voz individual dos personagens, respeitando regras de anatomia ou de universo, enquanto avança o enredo de forma fluida e sem travar a cena.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.80 | 0.70 - 0.90 |
+| **Top K** | 50 | 40 - 60 |
+| **Top P** | 0.90 | 0.85 - 0.95 |
+| **Min P** | 0.05 | 0.03 - 0.08 |
+| **Frequency Penalty** | 0.25 | 0.15 - 0.35 |
+| **Presence Penalty** | 0.40 | 0.30 - 0.50 |
+| **Repeat Penalty** | 1.08 | 1.05 - 1.12 |
+| *A dinâmica: Penalidades de presença mais altas forçam os personagens a tomarem novas ações e discutirem novos tópicos, evitando diálogos circulares.* |  |  |
+
+### 14. Documentação Técnica e READMEs
+
+*Foco: Clareza instrucional com um tom amigável e acessível. A IA deve manter o texto equilibrado e profissional, mas com uma leveza sutil — divertido, porém sem soar descolado demais ou informal em excesso.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.40 | 0.30 - 0.50 |
+| **Top K** | 30 | 20 - 40 |
+| **Top P** | 0.65 | 0.50 - 0.75 |
+| **Min P** | 0.05 | 0.05 - 0.10 |
+| **Frequency Penalty** | 0.10 | 0.00 - 0.15 |
+| **Presence Penalty** | 0.10 | 0.00 - 0.15 |
+| **Repeat Penalty** | 1.02 | 1.00 - 1.05 |
+| *A dinâmica: Restringimos a criatividade para focar puramente em explicar como módulos e bibliotecas funcionam, garantindo que os tutoriais não contenham passos inventados.* |  |  |
+
+### 15. Otimização e Refatoração de Código
+
+*Foco: Reescrita lógica e estrita de scripts existentes. A IA deve focar inteiramente em criar funções reutilizáveis, templates eficientes e evitar qualquer repetição de fórmulas, reduzindo o tamanho final do código.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.15 | 0.05 - 0.20 |
+| **Top K** | 15 | 10 - 20 |
+| **Top P** | 0.20 | 0.10 - 0.30 |
+| **Min P** | 0.05 | 0.02 - 0.05 |
+| **Frequency Penalty** | 0.00 | 0.00 |
+| **Presence Penalty** | 0.00 | 0.00 |
+| **Repeat Penalty** | 1.00 | 1.00 |
+| *A dinâmica: Quase tão determinístico quanto a extração de JSON. Penalidades zeradas são obrigatórias para que a IA não tente usar nomes de variáveis diferentes só para "variar o vocabulário", quebrando a sintaxe do projeto.* |  |  |
+
+### 16. Geração de Dados Fictícios (Mock Data / Seeders)
+
+*Foco: Criação de volumes massivos de dados estruturados para popular bancos de dados em fase de testes, mantendo a variedade e o realismo sem repetição excessiva.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.90 | 0.80 - 1.00 |
+| **Top K** | 50 | 40 - 60 |
+| **Top P** | 0.95 | 0.90 - 1.00 |
+| **Min P** | 0.05 | 0.02 - 0.08 |
+| **Frequency Penalty** | 0.40 | 0.30 - 0.50 |
+| **Presence Penalty** | 0.50 | 0.40 - 0.60 |
+| **Repeat Penalty** | 1.10 | 1.05 - 1.15 |
+| *A dinâmica: Diferente do JSON determinístico, aqui queremos variedade. A alta temperatura e penalidades fortes garantem que a IA gere 50 perfis de usuários, itens ou logs totalmente diferentes uns dos outros, sem repetir nomes ou características.* |  |  |
