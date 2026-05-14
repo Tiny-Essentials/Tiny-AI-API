@@ -273,3 +273,93 @@
 | **Presence Penalty** | 0.10 | 0.00 - 0.15 |
 | **Repeat Penalty** | 1.02 | 1.00 - 1.04 |
 | *A dinâmica: Temperatura baixa para manter os fatos coerentes e um Min P alto para descartar palavras que causem ambiguidade. O texto deve ser tão claro que não deixe margem para dupla interpretação.* |  |  |
+
+### 20. Expansão de Informação (Elaboração)
+
+*Foco: Pegar um conceito curto ou uma anotação básica e adicionar detalhes relevantes, contexto e exemplos. A IA precisa de criatividade controlada para buscar informações adjacentes, mas não pode desviar do tema central.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.60 | 0.50 - 0.70 |
+| **Top K** | 40 | 30 - 50 |
+| **Top P** | 0.80 | 0.70 - 0.85 |
+| **Min P** | 0.05 | 0.04 - 0.08 |
+| **Frequency Penalty** | 0.20 | 0.10 - 0.30 |
+| **Presence Penalty** | 0.30 | 0.20 - 0.40 |
+| **Repeat Penalty** | 1.05 | 1.02 - 1.08 |
+| *A dinâmica: O Presence Penalty é ligeiramente alto para forçar a IA a trazer novos sub-tópicos e expandir o assunto, enquanto a Temperature média garante que essas adições façam sentido lógico com a informação original.* |  |  |
+
+### 21. Desenvolvimento de Conceitos e Estruturação
+
+*Foco: Pegar uma ideia abstrata ou um brainstorming e transformá-lo em algo estruturado (como dividir uma ideia de lore em capítulos organizados ou criar a lógica passo a passo de um sistema).*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.50 | 0.40 - 0.60 |
+| **Top K** | 35 | 25 - 45 |
+| **Top P** | 0.75 | 0.65 - 0.80 |
+| **Min P** | 0.08 | 0.05 - 0.10 |
+| **Frequency Penalty** | 0.10 | 0.05 - 0.15 |
+| **Presence Penalty** | 0.20 | 0.10 - 0.30 |
+| **Repeat Penalty** | 1.02 | 1.00 - 1.05 |
+| *A dinâmica: É mais restrito que a Expansão. Aqui queremos que a IA organize e aprofunde o que já existe, criando conexões claras e literais entre os pontos, usando listas ou categorias precisas.* |  |  |
+
+### 22. Alteração e Reescrita (Paráfrase e Mudança de Tom)
+
+*Foco: Mudar completamente as palavras ou o tom de um texto (por exemplo, de informal para acadêmico), mas preservando 100% do significado original e dos fatos.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.35 | 0.25 - 0.45 |
+| **Top K** | 30 | 20 - 40 |
+| **Top P** | 0.65 | 0.55 - 0.75 |
+| **Min P** | 0.05 | 0.03 - 0.08 |
+| **Frequency Penalty** | 0.40 | 0.30 - 0.60 |
+| **Presence Penalty** | 0.10 | 0.00 - 0.20 |
+| **Repeat Penalty** | 1.08 | 1.05 - 1.15 |
+| *A dinâmica: Esta é a grande sacada técnica: usamos uma Temperature baixa (para não inventar fatos novos) combinada com um Frequency Penalty alto. Isso obriga a IA a encontrar sinônimos e estruturas de frases diferentes, já que ela é severamente penalizada se usar as mesmas palavras do texto original.* |  |  |
+
+### 23. Fusão e Síntese de Múltiplas Fontes
+
+*Foco: Pegar dois ou mais textos diferentes (ou anotações soltas) e combiná-los em um único documento coerente, eliminando redundâncias e conectando as ideias.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.25 | 0.15 - 0.35 |
+| **Top K** | 25 | 15 - 30 |
+| **Top P** | 0.55 | 0.45 - 0.65 |
+| **Min P** | 0.10 | 0.08 - 0.15 |
+| **Frequency Penalty** | 0.15 | 0.10 - 0.25 |
+| **Presence Penalty** | 0.10 | 0.00 - 0.15 |
+| **Repeat Penalty** | 1.02 | 1.00 - 1.05 |
+| *A dinâmica: Um perfil bem analítico. A IA precisa apenas ser uma "cola" entre as informações. O Min P alto garante que as transições entre um texto e outro usem palavras muito seguras e lógicas.* |  |  |
+
+### 24. Filtragem, Limpeza e Padronização de Dados
+
+*Foco: Remover "sujeira" de um texto. Por exemplo, extrair apenas os nomes e datas de um e-mail longo, ou padronizar uma lista bagunçada para um formato consistente.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.10 | 0.00 - 0.20 |
+| **Top K** | 15 | 5 - 20 |
+| **Top P** | 0.20 | 0.10 - 0.30 |
+| **Min P** | 0.05 | 0.02 - 0.10 |
+| **Frequency Penalty** | 0.00 | 0.00 |
+| **Presence Penalty** | 0.00 | 0.00 |
+| **Repeat Penalty** | 1.00 | 1.00 |
+| *A dinâmica: Quase tão estrito quanto a extração de código e JSON. As penalidades precisam ser zero para garantir que a IA possa formatar os dados de forma idêntica (como usar os mesmos marcadores ou títulos) sem ser punida por repetição.* |  |  |
+
+### 25. Análise Crítica e Identificação de Inconsistências
+
+*Foco: Pedir para a IA agir como advogada do diabo ou revisora técnica, procurando falhas de lógica, contradições ou informações incompletas dentro de um texto fornecido.*
+
+| Parâmetro | Valor Recomendado | Faixa Aproximada |
+| --- | --- | --- |
+| **Temperature** | 0.40 | 0.30 - 0.50 |
+| **Top K** | 30 | 20 - 40 |
+| **Top P** | 0.70 | 0.60 - 0.80 |
+| **Min P** | 0.08 | 0.05 - 0.12 |
+| **Frequency Penalty** | 0.15 | 0.10 - 0.25 |
+| **Presence Penalty** | 0.20 | 0.15 - 0.30 |
+| **Repeat Penalty** | 1.02 | 1.00 - 1.05 |
+| *A dinâmica: É um perfil de leitura profunda. A IA precisa de presença suficiente para "olhar ao redor" do texto e levantar questionamentos (Presence Penalty), mas com uma temperatura controlada para que a crítica seja baseada em lógica e não em opiniões aleatórias.* |  |  |
