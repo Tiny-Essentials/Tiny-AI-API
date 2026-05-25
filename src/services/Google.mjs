@@ -1,125 +1,21 @@
 import { jsonrepair } from 'jsonrepair';
-import TinyAiInstance from '../TinyAiInstance.mjs';
+import TinyAiInstance2 from '../TinyAiInstance2.mjs';
+import errorCodes from '../utils/errorCodes.mjs';
 
 /**
  * Configures the Tiny AI Api to use the Google Gemini API.
  *
- * This function sets up the Google Gemini API in a TinyAiApi instance, providing
- * the required authentication and model parameters.
+ * This function sets up the Google Gemini API in a TinyAiInstance2, translating
+ * the internal OpenAI-like structure into Gemini's specific 'parts' and 'inlineData' format.
  *
- * @param {TinyAiInstance} tinyGoogleAI - The TinyAiApi instance to be configured.
+ * @param {TinyAiInstance2} tinyGoogleAI - The TinyAiApi instance to be configured.
  * @param {string} GEMINI_API_KEY - The API key for Google Gemini.
- * @param {string} [MODEL_DATA='gemini-2.0-flash'] - The model to use (default is 'gemini-2.0-flash').
+ * @param {string} [MODEL_DATA='gemini-2.0-flash'] - The model to use.
  */
 export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemini-2.0-flash') {
   const apiUrl = 'https://generativelanguage.googleapis.com/v1beta';
   tinyGoogleAI.setApiKey(GEMINI_API_KEY);
   tinyGoogleAI.setModel(MODEL_DATA);
-
-  /**
-   * A comprehensive map of HTTP status codes and their corresponding human-readable descriptions.
-   *
-   * This object includes:
-   * - Standard HTTP status codes (1xx–5xx)
-   * - Cloudflare-specific codes (520–530, 598–599)
-   * - Nginx-specific codes (444, 494–499)
-   *
-   * These codes are useful for interpreting responses from HTTP requests and displaying
-   * user-friendly messages or handling programmatic logic based on response status.
-   *
-   * @constant
-   * @type {Object<number, string>}
-   *
-   * @example
-   * const message = errorCodes[404]; // "Not Found"
-   * if (status >= 400) {
-   *   console.warn(`Error ${status}: ${errorCodes[status] || 'Unknown Status Code'}`);
-   * }
-   */
-  const errorCodes = {
-    100: 'Continue',
-    101: 'Switching Protocols',
-    102: 'Processing',
-    103: 'Early Hints',
-    200: 'OK',
-    201: 'Created',
-    202: 'Accepted',
-    203: 'Non-Authoritative Information',
-    204: 'No Content',
-    205: 'Reset Content',
-    206: 'Partial Content',
-    207: 'Multi-Status',
-    208: 'Already Reported',
-    226: 'IM Used',
-    300: 'Multiple Choices',
-    301: 'Moved Permanently',
-    302: 'Found',
-    303: 'See Other',
-    304: 'Not Modified',
-    305: 'Use Proxy',
-    306: 'Switch Proxy',
-    307: 'Temporary Redirect',
-    308: 'Permanent Redirect',
-    400: 'Bad Request',
-    401: 'Unauthorized',
-    402: 'Payment Required',
-    403: 'Forbidden',
-    404: 'Not Found',
-    405: 'Method Not Allowed',
-    406: 'Not Acceptable',
-    407: 'Proxy Authentication Required',
-    408: 'Request Timeout',
-    409: 'Conflict',
-    410: 'Gone',
-    411: 'Length Required',
-    412: 'Precondition Failed',
-    413: 'Payload Too Large',
-    414: 'URI Too Long',
-    415: 'Unsupported Media Type',
-    416: 'Range Not Satisfiable',
-    417: 'Expectation Failed',
-    418: "I'm a teapot",
-    421: 'Misdirected Request',
-    422: 'Unprocessable Entity',
-    423: 'Locked',
-    424: 'Failed Dependency',
-    425: 'Too Early',
-    426: 'Upgrade Required',
-    428: 'Precondition Required',
-    429: 'Too Many Requests',
-    431: 'Request Header Fields Too Large',
-    451: 'Unavailable For Legal Reasons',
-    500: 'Internal Server Error',
-    501: 'Not Implemented',
-    502: 'Bad Gateway',
-    503: 'Service Unavailable',
-    504: 'Gateway Timeout',
-    505: 'HTTP Version Not Supported',
-    506: 'Variant Also Negotiates',
-    507: 'Insufficient Storage',
-    508: 'Loop Detected',
-    510: 'Not Extended',
-    511: 'Network Authentication Required',
-    520: 'Web Server Returned an Unknown Error',
-    521: 'Web Server Is Down',
-    522: 'Connection Timed Out',
-    523: 'Origin Is Unreachable',
-    524: 'A Timeout Occurred',
-    525: 'SSL Handshake Failed',
-    526: 'Invalid SSL Certificate',
-    527: 'Railgun Error',
-    530: 'Site Frozen',
-    598: 'Network Read Timeout Error',
-    599: 'Network Connect Timeout Error',
-
-    // Nginx
-    444: 'No Response',
-    494: 'Request Header Too Large',
-    495: 'SSL Certificate Error',
-    496: 'SSL Certificate Required',
-    497: 'HTTP Request Sent to HTTPS Port',
-    499: 'Client Closed Request',
-  };
 
   /**
    * Registers a predefined set of error codes and their associated messages for interpreting
@@ -175,29 +71,28 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
    * @param {*} [result={ error: { code: null, message: null, status: null, details: null } }]
    * @param {*} [finalData={ error: { code: null, message: null, status: null, details: null } }]
    */
-  const buildErrorData = (
-    result = { error: { code: null, message: null, status: null, details: null } },
-    finalData = { error: { code: null, message: null, status: null, details: null } },
-  ) => {
-    if (typeof result === 'undefined') throw new Error('Invalid result or missing error object');
-
+  const buildErrorData = (result = { error: {} }, finalData = {}) => {
     finalData.error = {
-      code: typeof result.error.code === 'number' ? result.error.code : null,
-      message: typeof result.error.message === 'string' ? result.error.message : null,
-      status: typeof result.error.status === 'string' ? result.error.status : null,
+      code: typeof result.error?.code === 'number' ? result.error.code : null,
+      message: typeof result.error?.message === 'string' ? result.error.message : null,
+      status: typeof result.error?.status === 'string' ? result.error.status : null,
+      details: result.error?.details || null,
     };
-
-    if (result.error.details) finalData.error.details = result.error.details;
   };
 
   /**
-   * Constructs the full request body for the Google Gemini API call.
+   * @typedef {Object<any, any>} ObjectAny
+   */
+
+  /**
+   * Translates TinyAiInstance2 internal format into Gemini Request format.
+   * Extracts base64 correctly for vision capability support.
    *
-   * @param {*} data
-   * @param {*} [config={}]
-   * @param {*} [cache=null]
-   * @param {boolean} [cacheMode=false]
-   * @returns {*}
+   * @param {Array<ObjectAny>} data - Internal conversation history.
+   * @param {ObjectAny} [config={}] - Model configuration.
+   * @param {ObjectAny|null} [cache=null] - Cached content configuration.
+   * @param {boolean} [cacheMode=false] - Whether it is running in cache mode.
+   * @returns {ObjectAny} Formatted request payload for Gemini.
    */
   const requestBuilder = (data, config = {}, cache = null, cacheMode = false) => {
     /**
@@ -222,60 +117,64 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
      */
     const requestBody = {};
     if (!cacheMode) requestBody.safetySettings = [];
-
     // Model
     if (typeof config.model === 'string') requestBody.model = config.model;
-
     // Expiration
     if (typeof config.ttl === 'string') requestBody.ttl = config.ttl;
-
     // Expiration
     if (typeof config.name === 'string') requestBody.name = config.name;
 
     // Execute builder
-    for (const index in data) {
-      const item = data[index];
-      if (item) {
-        if (item.role !== 'system') {
-          if (!Array.isArray(requestBody.contents)) requestBody.contents = [];
-          tinyGoogleAI.buildContents(requestBody.contents, item, item.role, true);
-        } else {
-          if (!Array.isArray(requestBody.systemInstruction)) requestBody.systemInstruction = [];
-          tinyGoogleAI.buildContents(requestBody.systemInstruction, item, undefined, true);
-          requestBody.systemInstruction = requestBody.systemInstruction[0];
+    for (const item of data) {
+      if (!item) continue;
+
+      const role = item.role === 'assistant' ? 'model' : item.role === 'system' ? 'system' : 'user';
+      const parts = [];
+
+      if (typeof item.content === 'string') {
+        parts.push({ text: item.content });
+      } else if (Array.isArray(item.content)) {
+        for (const part of item.content) {
+          if (part.type === 'text') parts.push({ text: part.text });
+          else if (part.type === 'image_url' && part.image_url?.url) {
+            const match = part.image_url.url.match(/^data:(.+);base64,(.+)$/);
+            if (match) parts.push({ inlineData: { mimeType: match[1], data: match[2] } });
+          }
         }
+      }
+
+      if (role === 'system') {
+        if (!requestBody.systemInstruction) requestBody.systemInstruction = { parts: [] };
+        requestBody.systemInstruction.parts.push(...parts);
+      } else {
+        if (!requestBody.contents) requestBody.contents = [];
+        requestBody.contents.push({ role, parts });
       }
     }
 
     // Config
     if (!cacheMode) {
+      // @ts-ignore
       requestBody.generationConfig = {};
-      if (typeof tinyGoogleAI.getMaxOutputTokens() === 'number')
-        requestBody.generationConfig.maxOutputTokens = tinyGoogleAI.getMaxOutputTokens();
+      /**
+       * @param {number|null} val
+       * @param {string} key
+       */
+      const setIfNumber = (val, key) => {
+        // @ts-ignore
+        if (typeof val === 'number') requestBody.generationConfig[key] = val;
+      };
 
-      if (typeof tinyGoogleAI.getTemperature() === 'number')
-        requestBody.generationConfig.temperature = tinyGoogleAI.getTemperature();
-
-      if (typeof tinyGoogleAI.getTopP() === 'number')
-        requestBody.generationConfig.topP = tinyGoogleAI.getTopP();
-
-      if (typeof tinyGoogleAI.getTopK() === 'number')
-        requestBody.generationConfig.topK = tinyGoogleAI.getTopK();
-
-      if (typeof tinyGoogleAI.getPresencePenalty() === 'number')
-        requestBody.generationConfig.presencePenalty = tinyGoogleAI.getPresencePenalty();
-
-      if (typeof tinyGoogleAI.getFrequencyPenalty() === 'number')
-        requestBody.generationConfig.frequencyPenalty = tinyGoogleAI.getFrequencyPenalty();
-
-      if (typeof tinyGoogleAI.isEnabledEnchancedCivicAnswers() === 'boolean')
-        requestBody.generationConfig.enableEnhancedCivicAnswers =
-          tinyGoogleAI.isEnabledEnchancedCivicAnswers();
+      setIfNumber(tinyGoogleAI.getMaxOutputTokens(), 'maxOutputTokens');
+      setIfNumber(tinyGoogleAI.getTemperature(), 'temperature');
+      setIfNumber(tinyGoogleAI.getTopP(), 'topP');
+      setIfNumber(tinyGoogleAI.getTopK(), 'topK');
+      setIfNumber(tinyGoogleAI.getPresencePenalty(), 'presencePenalty');
+      setIfNumber(tinyGoogleAI.getFrequencyPenalty(), 'frequencyPenalty');
     }
 
     // Cache
     if (cache) requestBody.cachedContent = cache;
-
     // Complete
     return requestBody;
   };
@@ -324,52 +223,43 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
          * @private
          */
         const buildUsageMetada = (result) => {
-          const usageMetadata = {
-            count: {
-              candidates: null,
-              prompt: null,
-              total: null,
-            },
-          };
-
-          let needShowMetadataError = false;
+          const usageMetadata = { count: { candidates: null, prompt: null, total: null } };
           if (result.usageMetadata) {
             // Candidates
-            if (typeof result.usageMetadata.candidatesTokenCount === 'number')
-              usageMetadata.count.candidates = result.usageMetadata.candidatesTokenCount;
+            usageMetadata.count.candidates = result.usageMetadata.candidatesTokenCount ?? null;
             // Prompt
-            if (typeof result.usageMetadata.promptTokenCount === 'number')
-              usageMetadata.count.prompt = result.usageMetadata.promptTokenCount;
+            usageMetadata.count.prompt = result.usageMetadata.promptTokenCount ?? null;
             // Total
-            if (typeof result.usageMetadata.totalTokenCount === 'number')
-              usageMetadata.count.total = result.usageMetadata.totalTokenCount;
+            usageMetadata.count.total = result.usageMetadata.totalTokenCount ?? null;
+            return [usageMetadata, false];
           }
-          // Error
-          else needShowMetadataError = true;
-          return [usageMetadata, needShowMetadataError];
+          return [usageMetadata, true];
         };
 
         /**
-         * Parses and adds content candidates to the final result object.
+         * Parses the Gemini response format back into the TinyAiInstance2 format.
          *
          * @param {*} result - The result object from the API response.
          * @param {*} finalData - The object where content candidates are appended.
          * @private
          */
         const buildContent = (result, finalData) => {
-          if (Array.isArray(result.candidates)) {
-            for (const index in result.candidates) {
-              const item = result.candidates[index];
-              if (item.content) {
-                // Finished reason
-                let finishReason = null;
-                if (typeof item.finishReason === 'string')
-                  finishReason = item.finishReason.toUpperCase();
+          if (!Array.isArray(result.candidates)) return;
+          for (const item of result.candidates) {
+            if (item.content) {
+              // Finished reason
+              const finishReason =
+                typeof item.finishReason === 'string' ? item.finishReason.toUpperCase() : undefined;
+              // Build content
+              const role = item.content.role === 'model' ? 'assistant' : 'user';
+              let textContent = '';
 
-                // Build content
-                tinyGoogleAI.buildContents(finalData.contents, item.content, item.content.role);
-                finalData.contents[finalData.contents.length - 1].finishReason = finishReason;
+              if (Array.isArray(item.content.parts)) {
+                for (const part of item.content.parts) {
+                  if (part.text) textContent += part.text;
+                }
               }
+              finalData.contents.push({ role, content: textContent, finishReason });
             }
           }
         };
@@ -397,7 +287,7 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
             const [tokenUsage, needShowMetadataError] = buildUsageMetada(result);
             finalData.tokenUsage = tokenUsage;
             if (needShowMetadataError) {
-              console.error('Usage Metadata not found in the Google AI result.');
+              console.error('[Google API] Usage Metadata not found.');
               console.log(result);
             }
 
@@ -428,95 +318,66 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
             let done = false;
             let countData = 0;
             let streamResult = {};
-            /** @type {*} */
             const streamCache = [];
 
             // Read streaming
             console.groupCollapsed('[google-generative] Streaming request.');
             console.log(`[ai-config] [${model}]`, requestBody, data);
             while (!done) {
-              if (reader && typeof reader.read === 'function') {
-                const readerData = await reader.read();
-                const { value, done: streamDone } = readerData;
-                done = streamDone;
-                if (value) {
-                  const chunk = decoder.decode(value, { stream: true });
-                  if (!done) {
-                    let cleanedJson = '';
-                    try {
-                      cleanedJson = chunk.trim();
-                      if (cleanedJson.startsWith(',')) cleanedJson = cleanedJson.substring(1);
-                      if (cleanedJson.length > 1) {
-                        cleanedJson = jsonrepair(cleanedJson);
-                        cleanedJson = `${!cleanedJson.startsWith('[') ? '[' : ''}${cleanedJson}${!cleanedJson.endsWith(']') ? ']' : ''}`;
-                        const jsonChunk = JSON.parse(cleanedJson);
+              const { value, done: streamDone } = await reader.read();
+              done = streamDone;
+              if (value) {
+                const chunk = decoder.decode(value, { stream: true });
+                if (!done) {
+                  try {
+                    let cleanedJson = chunk.trim();
+                    if (cleanedJson.startsWith(',')) cleanedJson = cleanedJson.substring(1);
+                    if (cleanedJson.length > 1) {
+                      cleanedJson = jsonrepair(cleanedJson);
+                      cleanedJson = `${!cleanedJson.startsWith('[') ? '[' : ''}${cleanedJson}${!cleanedJson.endsWith(']') ? ']' : ''}`;
+                      const jsonChunk = JSON.parse(cleanedJson);
 
-                        console.log(`[${countData}]`, chunk);
-                        console.log(`[${countData}]`, cleanedJson);
-                        console.log(`[${countData}]`, jsonChunk);
+                      console.log(`[${countData}]`, chunk);
+                      console.log(`[${countData}]`, cleanedJson);
+                      console.log(`[${countData}]`, jsonChunk);
 
-                        // Send temp data
-                        for (const indexResult in jsonChunk) {
-                          const result = jsonChunk[indexResult];
-                          if (result) {
-                            /** @type {*} */
-                            const tinyData = { contents: [] };
-                            buildContent(result, tinyData);
+                      // Send temp data
+                      for (const result of jsonChunk) {
+                        if (result) {
+                          /** @type {*} */
+                          const tinyData = { contents: [] };
+                          buildContent(result, tinyData);
 
-                            /** @type {*} */
-                            const tinyResult = {
-                              tokenUsage: buildUsageMetada(result)[0],
-                            };
-
-                            for (const index in tinyData.contents) {
-                              if (!Array.isArray(streamCache[index])) streamCache[index] = [];
-                              for (const index2 in tinyData.contents[index].parts) {
-                                const item = tinyData.contents[index].parts[index2];
-                                if (typeof item.text === 'string') {
-                                  if (!streamCache[index][index2]) streamCache[index][index2] = {};
-
-                                  if (typeof streamCache[index][index2].text !== 'string')
-                                    streamCache[index][index2].text = '';
-
-                                  streamCache[index][index2].text += item.text;
-                                  item.text = streamCache[index][index2].text;
-
-                                  if (typeof tinyData.contents[index].role === 'string')
-                                    streamCache[index][index2].role = tinyData.contents[index].role;
-                                }
-                              }
-                            }
-
-                            // Complete
-                            streamResult = result;
-                            tinyResult.contents = tinyData.contents;
-                            tinyResult.done = false;
-                            streamingCallback(tinyResult);
+                          for (let i = 0; i < tinyData.contents.length; i++) {
+                            if (!streamCache[i])
+                              streamCache[i] = { content: '', role: tinyData.contents[i].role };
+                            streamCache[i].content += tinyData.contents[i].content || '';
+                            tinyData.contents[i].content = streamCache[i].content;
                           }
+
+                          streamResult = result;
+                          streamingCallback({
+                            tokenUsage: buildUsageMetada(result)[0],
+                            contents: tinyData.contents,
+                            done: false,
+                          });
                         }
                       }
-                    } catch {
-                      console.log(`[google-generative] [ai-error] [chuck] [${countData}]`, chunk);
-                      console.log(
-                        `[google-generative] [ai-error] [cleanedJson] [${countData}]`,
-                        cleanedJson,
-                      );
                     }
+                  } catch (err) {
+                    console.warn('[Google API] Stream parsing warning on chunk.');
                   }
                 }
-                countData++;
-              } else done = true;
+              }
+              countData++;
             }
             console.groupEnd();
 
             // Complete
             streamingCallback({ done: true });
             const finalData = finalPromise(streamResult);
-            for (const index in finalData.contents) {
-              for (const index2 in finalData.contents[index].parts) {
-                if (typeof finalData.contents[index].parts[index2].text === 'string')
-                  finalData.contents[index].parts[index2].text = streamCache[index][index2];
-              }
+            for (let i = 0; i < finalData.contents.length; i++) {
+              if (streamCache[i]) finalData.contents[i].content = streamCache[i].content;
             }
             resolve(finalData);
           } catch (err) {
@@ -528,16 +389,12 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
         const fetchRequest = fetch(
           `${apiUrl}/models/${model}:${!isStream ? 'generateContent' : 'streamGenerateContent'}?key=${encodeURIComponent(apiKey)}`,
           {
-            signal: controller ? controller.signal : undefined,
+            signal: controller?.signal,
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody),
           },
         );
-
-        // Normal
 
         // Request
         fetchRequest
@@ -554,15 +411,7 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
               else if (!res.ok)
                 reject(
                   new Error(
-                    `Error ${typeof res.status === 'number' ? `HTTP ${res.status}` : 'UNKNOWN ERROR'}: ${
-                      typeof res.statusText === 'string'
-                        ? res.statusText.length > 0
-                          ? res.statusText
-                          : typeof errorCodes[Number(res.status)] === 'string'
-                            ? errorCodes[Number(res.status)]
-                            : '???'
-                        : 'Unknown'
-                    }`,
+                    `Error HTTP ${res.status}: ${res.statusText || errorCodes[res.status] || 'Unknown'}`,
                   ),
                 );
               // Streaming
@@ -608,7 +457,6 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
    *   inputTokenLimit: <number>,
    *   outputTokenLimit: <number>,
    *   temperature: <number>,
-   *   maxTemperature: <number>,
    *   topP: <number>,
    *   topK: <number>,
    *   supportedGenerationMethods: [<string>]
@@ -624,12 +472,10 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
     (apiKey, pageSize, pageToken) =>
       new Promise((resolve, reject) =>
         fetch(
-          `${apiUrl}/models?key=${encodeURIComponent(apiKey)}&pageSize=${encodeURIComponent(pageSize)}${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`,
+          `${apiUrl}/models?key=${encodeURIComponent(apiKey)}&pageSize=${pageSize}${pageToken ? `&pageToken=${pageToken}` : ''}`,
           {
             method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
           },
         )
           // Request
@@ -644,125 +490,25 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
               // Update Token
               tinyGoogleAI._setNextModelsPageToken(result.nextPageToken);
 
-              // Categories
-              /** @type {*} */
-              const newModels = [
-                {
-                  category: 'main',
-                  index: 0,
-                  displayName: '--> Main models',
-                  data: [],
-                },
-                {
-                  category: 'exp',
-                  index: 1,
-                  displayName: '--> Experimental models',
-                  data: [],
-                },
-                {
-                  category: 'others',
-                  index: 2,
-                  displayName: '--> Other models',
-                  data: [],
-                },
-              ];
-
-              const modelOrderIndexUsed = { main: -1, exp: -1 };
-              /** @type {*} */
-              const modelOrder = {};
-
-              const addModelVersions = (version = '') => {
-                // Release
-                modelOrderIndexUsed.main++;
-                modelOrder[`gemini-${version}-flash`] = {
-                  index: modelOrderIndexUsed.main,
-                  category: 'main',
-                };
-                modelOrderIndexUsed.main++;
-                modelOrder[`gemini-${version}-pro`] = {
-                  index: modelOrderIndexUsed.main,
-                  category: 'main',
-                };
-                // Exp
-                modelOrderIndexUsed.exp++;
-                modelOrder[`gemini-${version}-flash-exp`] = {
-                  index: modelOrderIndexUsed.exp,
-                  category: 'exp',
-                };
-                modelOrderIndexUsed.exp++;
-                modelOrder[`gemini-${version}-pro-exp`] = {
-                  index: modelOrderIndexUsed.exp,
-                  category: 'exp',
-                };
-              };
-
-              for (let versionNumber = 99; versionNumber >= 2; versionNumber--) {
-                addModelVersions(`${versionNumber}.0`);
-                addModelVersions(`${versionNumber}.5`);
-              }
-              addModelVersions('1.5');
-
-              // Read models
-              console.log('[Google Generative] Models list', result.models);
-              for (const index in result.models) {
-                const id = result.models[index].name.substring(7);
-                let allowed = false;
-                if (
-                  Array.isArray(result.models[index].supportedGenerationMethods) &&
-                  result.models[index].supportedGenerationMethods.indexOf('generateContent') > -1 &&
-                  result.models[index].supportedGenerationMethods.indexOf('countTokens') > -1
-                ) {
-                  for (const id2 in modelOrder) {
-                    if (id.startsWith(id2) || id === id2) allowed = true;
-                  }
-                }
-
-                // Allow add the model
-                if (allowed) {
-                  // Add custom order
-                  if (modelOrder[id] && typeof modelOrder[id].index === 'number')
-                    result.models[index]._NEW_ORDER = modelOrder[id].index;
-                  else result.models[index]._NEW_ORDER = 999999;
-
-                  // Add Category
-                  if (modelOrder[id] && typeof modelOrder[id].category === 'string') {
-                    const category = newModels.find(
-                      (/** @type {any} */ item) => item.category === modelOrder[id].category,
-                    );
-                    if (category) category.data.push(result.models[index]);
-                    // Nope
-                    else newModels[newModels.length - 1].data.push(result.models[index]);
-                  } else newModels[newModels.length - 1].data.push(result.models[index]);
-                }
-              }
-
-              // Send data
-              for (const index in newModels) {
-                for (const index2 in newModels[index].data) {
-                  const newModel = {
-                    _response: newModels[index].data[index2],
-                    category: {
-                      displayName: newModels[index].displayName,
-                      id: newModels[index].category,
-                      index: newModels[index].index,
-                    },
-                    index: newModels[index].data[index2]._NEW_ORDER,
-                    name: newModels[index].data[index2].name,
-                    id: newModels[index].data[index2].name.substring(7),
-                    displayName: newModels[index].data[index2].displayName,
-                    version: newModels[index].data[index2].version,
-                    description: newModels[index].data[index2].description,
-                    inputTokenLimit: newModels[index].data[index2].inputTokenLimit,
-                    outputTokenLimit: newModels[index].data[index2].outputTokenLimit,
-                    temperature: newModels[index].data[index2].temperature,
-                    maxTemperature: newModels[index].data[index2].maxTemperature,
-                    topP: newModels[index].data[index2].topP,
-                    topK: newModels[index].data[index2].topK,
-                    supportedGenerationMethods:
-                      newModels[index].data[index2].supportedGenerationMethods,
-                  };
-
-                  const inserted = tinyGoogleAI._insertNewModel(newModel);
+              let mIndex = -1;
+              for (const item of result.models) {
+                mIndex++;
+                if (item.supportedGenerationMethods?.includes('generateContent')) {
+                  const inserted = tinyGoogleAI._insertNewModel({
+                    _response: item,
+                    index: mIndex,
+                    name: item.name,
+                    id: item.name.substring(7),
+                    displayName: item.displayName,
+                    version: item.version,
+                    description: item.description,
+                    inputTokenLimit: item.inputTokenLimit,
+                    outputTokenLimit: item.outputTokenLimit,
+                    temperature: item.temperature,
+                    topP: item.topP,
+                    topK: item.topK,
+                    supportedGenerationMethods: item.supportedGenerationMethods,
+                  });
                   if (inserted) finalData.newData.push(inserted);
                 }
               }
@@ -815,19 +561,15 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
     (apiKey, model, controller, data) =>
       new Promise((resolve, reject) => {
         const dataContent = requestBuilder(data);
-        /** @type {*} */
         const modelInfo = tinyGoogleAI.getModelData(model);
         dataContent.model = modelInfo?.name;
-        if (Array.isArray(dataContent.contents) && dataContent.contents.length > 0) {
+
+        if (dataContent.contents?.length > 0) {
           fetch(`${apiUrl}/models/${model}:countTokens?key=${encodeURIComponent(apiKey)}`, {
-            signal: controller ? controller.signal : undefined,
+            signal: controller?.signal,
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              generateContentRequest: dataContent,
-            }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ generateContentRequest: dataContent }),
           })
             // Request
             .then((res) => res.json())
@@ -844,37 +586,15 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
                 if (typeof result.cachedContentTokenCount === 'number')
                   finalData.cachedContentTokenCount = result.cachedContentTokenCount;
                 else finalData.cachedContentTokenCount = null;
-
-                // Prompt tokens details
-                if (result.promptTokensDetails) {
-                  if (!finalData.promptTokensDetails) finalData.promptTokensDetails = {};
-                  // Token Count
-                  if (typeof result.promptTokensDetails.tokenCount === 'number')
-                    finalData.promptTokensDetails.tokenCount =
-                      result.promptTokensDetails.tokenCount;
-                  else finalData.promptTokensDetails.tokenCount = null;
-
-                  // Modality
-                  if (typeof result.promptTokensDetails.modality === 'string')
-                    finalData.promptTokensDetails.modality = result.promptTokensDetails.modality;
-                  else finalData.promptTokensDetails.modality = null;
-                }
               }
-
               // Error result
               else buildErrorData(result, finalData);
-
               // Complete
               resolve(finalData);
             })
             // Error
             .catch(reject);
-        } else
-          resolve({
-            _response: {},
-            totalTokens: null,
-            cachedContentTokenCount: null,
-          });
+        } else resolve({ _response: {}, totalTokens: null, cachedContentTokenCount: null });
       }),
   );
 
@@ -883,16 +603,16 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
 }
 
 /**
- * Creates and configures a new TinyAiInstance that is set up with the Google Gemini API.
+ * Creates and configures a new TinyAiInstance2 that is set up with the Google Gemini API.
  *
  * @class
- * @extends TinyAiInstance
+ * @extends TinyAiInstance2
  * @param {string} GEMINI_API_KEY - The API key used to authenticate with the Google Gemini API.
  * @param {string} [MODEL_DATA='gemini-2.0-flash'] - Optional. The model identifier to use. Defaults to `'gemini-2.0-flash'`.
  * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
- * @returns {TinyAiInstance} A configured instance of TinyAiApi.
+ * @returns {TinyAiInstance2} A configured instance of TinyAiApi.
  */
-class TinyGoogleAi extends TinyAiInstance {
+class TinyGoogleAi extends TinyAiInstance2 {
   constructor(GEMINI_API_KEY = '', MODEL_DATA = 'gemini-2.0-flash', isSingle = false) {
     super(isSingle);
     setTinyGoogleAi(this, GEMINI_API_KEY, MODEL_DATA);

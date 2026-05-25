@@ -12,7 +12,6 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * @property {string|null} systemInstruction
  * @property {{ name: string; type: string; }[]} [customList]
  * @property {string|null} model
- *
  */
 
 /**
@@ -31,7 +30,6 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * @property {number|null} inputTokenLimit
  * @property {number|null} outputTokenLimit
  * @property {number|null} temperature
- * @property {number|null} maxTemperature
  * @property {number|null} topP
  * @property {number|null} topK
  * @property {string[]} [supportedGenerationMethods]
@@ -46,9 +44,21 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  */
 
 /**
+ * @typedef {{ type: 'text', text: string }} AIContentTextInput
+ */
+
+/**
+ * @typedef {{ type: 'image_url', image_url: { url?: string, data?: string } }} AIContentImageInput
+ */
+
+/**
+ * @typedef {string|[AIContentTextInput,...AIContentImageInput[]]} AIContentInput
+ */
+
+/**
  * @typedef {Object} AIContentData
- * @property {Array<Record<'text' | 'inlineData', string | { mime_type: string, data: string } | null>>} parts
- * @property {string|undefined} [role]
+ * @property {AIContentInput} content
+ * @property {string} role
  * @property {string|number|undefined} [finishReason]
  */
 
@@ -57,19 +67,16 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  */
 
 /**
- * Tiny AI Server Communication API
+ * Tiny AI Server Communication API (OpenAI Standard)
  * -----------------------------
- * This class is responsible for managing AI session data, including models, history, and content generation.
- * The script is designed to interact with the AI API, providing a complete structure for creating user interfaces (UI) or AI-powered chatbots.
- * It implements a session management system to help handle multiple different bots.
- * However, this script is not optimized for efficiently handling multiple AI instances simultaneously, which may be required for high-load scenarios or when running several AI instances at once.
+ * This class manages AI session data natively using the OpenAI API structure.
+ * It uses 'role' and 'content', making it perfect for local models via
+ * LM Studio, vLLM, or the official OpenAI API.
  *
- * **Note**: This script does not automatically manage or track the token count for messages. Developers need to implement their own logic to monitor and manage token usage if necessary.
- *
- * Documentation written with the assistance of OpenAI's ChatGPT.
- * @deprecated
+ * **Note**: This script does not automatically track token count natively since
+ * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
  */
-class TinyAiInstance {
+class TinyAiInstance2 {
   /**
    * Important instance used to make event emitter.
    * @type {EventEmitter}
@@ -282,7 +289,6 @@ class TinyAiInstance {
   /** @type {function|null} */ #_countTokens = null;
   /** @type {function|null} */ #_genContentApi = null;
   /** @type {string|null} */ #_selectedHistory = null;
-  /** @type {Record<string, function>} */ #_partTypes = {};
   /** @type {function} */ #_insertIntoHistory = () => {};
   /** @type {Record<string|number, string|{ text: string, hide?: boolean }>} */ _errorCode = {};
   /** @type {string|null} */ _nextModelsPageToken = null;
@@ -292,7 +298,24 @@ class TinyAiInstance {
   _isSingle = false;
 
   /**
-   * Creates an instance of the TinyAiInstance class.
+   * Sets file data natively formatted for OpenAI Vision APIs.
+   * Converts plain data into an image URI structure.
+   *
+   * @param {string} mime - The MIME type of the file.
+   * @param {string} data - The file content (base64 or string).
+   * @param {boolean} [isBase64=false] - Whether data is already base64 encoded.
+   */
+  static imageToBase64(mime, data, isBase64 = false) {
+    return {
+      type: 'image_url',
+      image_url: {
+        url: `data:${mime};base64,${!isBase64 ? encodeBase64(data) : data}`,
+      },
+    };
+  }
+
+  /**
+   * Creates an instance of the TinyAiInstance2 class.
    * Initializes internal variables, sets up initial configurations for handling AI models,
    * session history, and content generation, with the option to use a single or multiple instances.
    *
@@ -316,18 +339,6 @@ class TinyAiInstance {
         return true;
       }
       return false;
-    };
-
-    /**
-     * Parsers for different part types.
-     * @type {{ text: (input: any) => string|null, inlineData: (input: any) => { mime_type: string, data: string }|null }}
-     */
-    this.#_partTypes = {
-      text: (/** @type {string} */ text) => (typeof text === 'string' ? text : null),
-      inlineData: (/** @type {{ mime_type: string; data: string; }} */ data) => {
-        if (typeof data.mime_type === 'string' && typeof data.data === 'string') return data;
-        return null;
-      },
     };
 
     // Is single instance
@@ -376,7 +387,7 @@ class TinyAiInstance {
 
         // Validate the custom value
         if (value !== null) {
-          const props = history.customList.find((/** @type {*} */ item) => item.name === name);
+          const props = history.customList.find((item) => item.name === name);
           if (!props || typeof props.type !== 'string' || typeof props.name !== 'string') {
             if (typeof history[name] === 'undefined')
               history.customList.push({
@@ -428,7 +439,7 @@ class TinyAiInstance {
         if (!Array.isArray(history.customList)) history.customList = [];
 
         // Validate the custom value
-        const props = history.customList.find((/** @type {*} */ item) => item.name === name);
+        const props = history.customList.find((item) => item.name === name);
         if (
           isJsonObject(props) &&
           typeof props.type === 'string' &&
@@ -550,7 +561,7 @@ class TinyAiInstance {
    */
   getTemperature(id) {
     const history = this.getData(id);
-    return history && typeof history.temperature ? history.temperature : null;
+    return history && typeof history.temperature === 'number' ? history.temperature : null;
   }
 
   /**
@@ -668,36 +679,6 @@ class TinyAiInstance {
   }
 
   /**
-   * Set the setting for enabling enhanced civic answers in an AI session.
-   *
-   * @param {boolean} value - Whether to enable enhanced civic answers (true or false).
-   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {void} This function does not return a value.
-   */
-  setEnabledEnchancedCivicAnswers(value, id) {
-    if (typeof value === 'boolean') {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { enableEnhancedCivicAnswers: value });
-      this.#emit('setEnabledEnchancedCivicAnswers', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid boolean value!');
-  }
-
-  /**
-   * Get the setting for whether enhanced civic answers are enabled in an AI session.
-   *
-   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {boolean | null} The value indicating whether enhanced civic answers are enabled, or null if not set.
-   */
-  isEnabledEnchancedCivicAnswers(id) {
-    const history = this.getData(id);
-    return history && typeof history.enableEnhancedCivicAnswers === 'boolean'
-      ? history.enableEnhancedCivicAnswers
-      : null;
-  }
-
-  /**
    * Set the model for an AI session.
    *
    * @param {string} data - The model to be set (must be a string).
@@ -720,48 +701,6 @@ class TinyAiInstance {
   getModel(id) {
     const history = this.getData(id);
     return history && typeof history.model === 'string' ? history.model : null;
-  }
-
-  /**
-   * Build content data for an AI session.
-   *
-   * @param {Array<*>} [contents] - An optional array to which the built content data will be pushed.
-   * @param {Record<string, any>} item - The item containing content parts or a content object.
-   * @param {string|null} [role] - The role to be associated with the content (optional).
-   * @param {boolean} [rmFinishReason=false] - If true, removes the `finishReason` property from the content.
-   * @returns {AIContentData|number} The constructed content data object, or array length if pushed to an array.
-   */
-  buildContents(contents, item = {}, role = null, rmFinishReason = false) {
-    // Content Data
-    const tinyThis = this;
-    /** @type {{ finishReason: string|number|undefined, parts: any[], role: string|undefined }} */
-    const contentData = { parts: [], finishReason: undefined, role: undefined };
-
-    // Role
-    if (typeof role === 'string') contentData.role = role;
-
-    /** @param {Record<string, any>} content */
-    const insertPart = (content) => {
-      /** @type {Record<string, function>} */
-      const tinyResult = {};
-      for (const valName in content) {
-        if (typeof tinyThis.#_partTypes[valName] === 'function')
-          tinyResult[valName] = tinyThis.#_partTypes[valName](content[valName]);
-      }
-      contentData.parts.push(tinyResult);
-    };
-
-    if (Array.isArray(item.parts)) {
-      for (const index in item.parts) insertPart(item.parts[index]);
-    } else if (item.content) insertPart(item.content);
-
-    if (!rmFinishReason)
-      if (typeof item.finishReason === 'string' || typeof item.finishReason === 'number')
-        contentData.finishReason = item.finishReason;
-
-    // Complete
-    if (Array.isArray(contents)) return contents.push(contentData);
-    return contentData;
   }
 
   /**
@@ -829,14 +768,12 @@ class TinyAiInstance {
     const model = this.models.find((item) => item.id === id);
     // @ts-ignore
     if (model) return model;
-    else {
-      for (const index in this.models) {
+    for (const index in this.models) {
+      // @ts-ignore
+      if (this.models[index].category) {
         // @ts-ignore
-        if (this.models[index].category) {
-          // @ts-ignore
-          const modelCategory = this.models[index].data.find((item) => item.id === id);
-          if (modelCategory) return modelCategory;
-        }
+        const modelCategory = this.models[index].data.find((item) => item.id === id);
+        if (modelCategory) return modelCategory;
       }
     }
     return null;
@@ -867,7 +804,6 @@ class TinyAiInstance {
    * @param {number} [model.inputTokenLimit] - The input token limit for the model.
    * @param {number} [model.outputTokenLimit] - The output token limit for the model.
    * @param {number} [model.temperature] - The temperature setting for the model.
-   * @param {number} [model.maxTemperature] - The maximum temperature setting for the model.
    * @param {number} [model.topP] - The top P setting for the model.
    * @param {number} [model.topK] - The top K setting for the model.
    * @param {Array<string>} [model.supportedGenerationMethods] - The generation methods supported by the model.
@@ -894,7 +830,6 @@ class TinyAiInstance {
         outputTokenLimit:
           typeof model.outputTokenLimit === 'number' ? model.outputTokenLimit : null,
         temperature: typeof model.temperature === 'number' ? model.temperature : null,
-        maxTemperature: typeof model.maxTemperature === 'number' ? model.maxTemperature : null,
         topP: typeof model.topP === 'number' ? model.topP : null,
         topK: typeof model.topK === 'number' ? model.topK : null,
       };
@@ -902,9 +837,8 @@ class TinyAiInstance {
       // Supported generation methods
       if (Array.isArray(model.supportedGenerationMethods)) {
         newData.supportedGenerationMethods = [];
-        for (const index in model.supportedGenerationMethods) {
-          if (typeof model.supportedGenerationMethods[index] === 'string')
-            newData.supportedGenerationMethods.push(model.supportedGenerationMethods[index]);
+        for (const method of model.supportedGenerationMethods) {
+          if (typeof method === 'string') newData.supportedGenerationMethods.push(method);
         }
       }
 
@@ -912,8 +846,7 @@ class TinyAiInstance {
       if (
         model.category &&
         typeof model.category.id === 'string' &&
-        typeof model.category.displayName === 'string' &&
-        typeof model.category.index === 'number'
+        typeof model.category.displayName === 'string'
       ) {
         // Check category
         /** @type {AiCategory|null} */
@@ -924,7 +857,7 @@ class TinyAiInstance {
           category = {
             category: model.category.id,
             displayName: model.category.displayName,
-            index: model.category.index,
+            index: model.category.index || 0,
             data: [],
           };
           this.models.push(category);
@@ -932,14 +865,10 @@ class TinyAiInstance {
 
         // Compare function that sorts objects by their `index` property.
         category.data.push(newData);
-        category.data.sort(
-          /** @param {{ index: number, [key: string]: any }} a @param {{ index: number, [key: string]: any }} b */
-          (a, b) => a.index - b.index,
-        );
-      }
-
-      // Normal mode
-      else this.models.push(newData);
+        category.data.sort((a, b) => a.index - b.index);
+      } else
+        // Normal mode
+        this.models.push(newData);
 
       // Sort data
       this.models.sort((a, b) => a.index - b.index);
@@ -1031,7 +960,7 @@ class TinyAiInstance {
     if (typeof this.#_genContentApi === 'function')
       return this.#_genContentApi(
         this.#_apiKey,
-        typeof streamCallback === 'function' ? true : false,
+        typeof streamCallback === 'function',
         data,
         model || this.getModel(),
         streamCallback,
@@ -1070,8 +999,7 @@ class TinyAiInstance {
    */
   getId(id) {
     const result = id && !this._isSingle ? id : this.#_selectedHistory;
-    if (typeof result === 'string') return result;
-    return null;
+    return typeof result === 'string' ? result : null;
   }
 
   /**
@@ -1133,9 +1061,7 @@ class TinyAiInstance {
           result += history.tokens.data[msgIndex].count;
       }
       for (const item in history.tokens) {
-        if (typeof history.tokens[item] === 'number') {
-          result += history.tokens[item];
-        }
+        if (typeof history.tokens[item] === 'number') result += history.tokens[item];
       }
       return result;
     }
@@ -1154,10 +1080,7 @@ class TinyAiInstance {
    */
   getMsgTokensByIndex(msgIndex, id) {
     const history = this.getData(id);
-    if (history) {
-      const existsIndex = this.indexExists(msgIndex, id);
-      if (existsIndex) return history.tokens.data[msgIndex];
-    }
+    if (history && this.indexExists(msgIndex, id)) return history.tokens.data[msgIndex];
     return null;
   }
 
@@ -1189,10 +1112,7 @@ class TinyAiInstance {
    */
   getMsgHashByIndex(msgIndex, id) {
     const history = this.getData(id);
-    if (history) {
-      const existsIndex = this.indexExists(msgIndex, id);
-      if (existsIndex) return history.hash.data[msgIndex];
-    }
+    if (history && this.indexExists(msgIndex, id)) return history.hash.data[msgIndex];
     return null;
   }
 
@@ -1277,7 +1197,7 @@ class TinyAiInstance {
    */
   getIdByIndex(index, id) {
     const history = this.getData(id);
-    if (history) return history.data[index] ? history.ids[index] : -1;
+    if (history && history.data[index]) return history.ids[index];
     return -1;
   }
 
@@ -1361,8 +1281,7 @@ class TinyAiInstance {
    */
   existsFirstIndex(id) {
     const history = this.getData(id);
-    if (history && history.data[0]) return true;
-    return false;
+    return history && history.data[0] ? true : false;
   }
 
   /**
@@ -1502,78 +1421,6 @@ class TinyAiInstance {
   }
 
   /**
-   * Sets file data for the selected session history.
-   *
-   * @param {string} [mime] - The MIME type of the file (e.g., 'text/plain', 'application/pdf') (optional).
-   * @param {string} [data] - The file content, either as a string or base64-encoded (optional).
-   * @param {boolean} [isBase64=false] - A flag indicating whether the `data` is already base64-encoded. Defaults to false.
-   * @param {number} [tokenAmount] - The token count associated with the file data (optional).
-   * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @throws {Error} If the session ID is invalid or data/mime is not a string.
-   * @returns {void}
-   */
-  setFileData(mime, data, isBase64 = false, tokenAmount = undefined, id = undefined) {
-    const selectedId = this.getId(id);
-    if (selectedId && this.history[selectedId]) {
-      let hash;
-      if (typeof data === 'string' && typeof mime === 'string') {
-        this.history[selectedId].file = {
-          mime,
-          data,
-          base64: !isBase64 ? encodeBase64(data) : data,
-        };
-        hash = objHash(this.history[selectedId].file);
-        this.history[selectedId].hash.file = hash;
-      }
-
-      if (typeof tokenAmount === 'number') this.history[selectedId].tokens.file = tokenAmount;
-      this.#emit('setFileData', this.history[selectedId].file, hash, selectedId);
-      return;
-    }
-    throw new Error('Invalid history id data!');
-  }
-
-  /**
-   * Removes file data from the selected session history.
-   *
-   * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @throws {Error} If the session history ID is invalid.
-   * @returns {void} This method does not return a value.
-   */
-  removeFileData(id) {
-    const selectedId = this.getId(id);
-    if (selectedId && this.history[selectedId]) {
-      delete this.history[selectedId].file;
-      delete this.history[selectedId].hash.file;
-      delete this.history[selectedId].tokens.file;
-      this.#emit('setFileData', null, null, selectedId);
-      return;
-    }
-    throw new Error('Invalid history id data!');
-  }
-
-  /**
-   * Retrieves file data from the selected session history.
-   *
-   * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @returns {{data: string, mime: string}|null} The file data, including MIME type and encoded content, or null if no file data is found.
-   * @throws {Error} If no valid session history ID is found.
-   */
-  getFileData(id) {
-    const selectedId = this.getId(id);
-    if (
-      selectedId &&
-      this.history[selectedId] &&
-      this.history[selectedId].file &&
-      typeof this.history[selectedId].file.data === 'string' &&
-      typeof this.history[selectedId].file.mime === 'string'
-    ) {
-      return this.history[selectedId].file;
-    }
-    return null;
-  }
-
-  /**
    * Sets a system instruction for the selected session history.
    *
    * @param {string} [data] - The system instruction to set.
@@ -1620,7 +1467,7 @@ class TinyAiInstance {
   /**
    * Retrieves the token count for a specific category within the selected session history.
    *
-   * @param {string} where - The category from which to retrieve the token count (e.g., 'prompt', 'file', 'systemInstruction').
+   * @param {string} where - The category from which to retrieve the token count (e.g., 'prompt', 'systemInstruction').
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
    * @returns {number|null} The token count if available, otherwise null.
    */
@@ -1638,7 +1485,7 @@ class TinyAiInstance {
   /**
    * Retrieves the hash value for a specific item in the selected session history.
    *
-   * @param {string} where - The key representing the item whose hash value is being retrieved (e.g., 'prompt', 'file', 'systemInstruction').
+   * @param {string} where - The key representing the item whose hash value is being retrieved (e.g., 'prompt', 'systemInstruction').
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
    * @returns {string|null} The hash value of the specified item, or null if the item does not exist.
    */
@@ -1710,4 +1557,4 @@ class TinyAiInstance {
   }
 }
 
-export default TinyAiInstance;
+export default TinyAiInstance2;

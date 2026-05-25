@@ -1,7 +1,7 @@
 {
   "name": "tiny-ai-api",
   "description": "A customizable and extensible client api for managing conversations and AI interactions, currently supporting the **Google Gemini** API — with flexibility to support any similar AI APIs.",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -15,9 +15,25 @@
       "require": "./dist/TinyAiInstance.cjs",
       "import": "./dist/TinyAiInstance.mjs"
     },
+    "./TinyAiInstance2": {
+      "require": "./dist/TinyAiInstance2.cjs",
+      "import": "./dist/TinyAiInstance2.mjs"
+    },
     "./services/Google": {
       "require": "./dist/services/Google.cjs",
       "import": "./dist/services/Google.mjs"
+    },
+    "./services/OpenAiCompatible": {
+      "require": "./dist/services/OpenAiCompatible.cjs",
+      "import": "./dist/services/OpenAiCompatible.mjs"
+    },
+    "./services/legacy/Google": {
+      "require": "./dist/services/legacy/Google.cjs",
+      "import": "./dist/services/legacy/Google.mjs"
+    },
+    "./utils/errorCodes": {
+      "require": "./dist/utils/errorCodes.cjs",
+      "import": "./dist/utils/errorCodes.mjs"
     },
     "./tiny-modules/basics/objFilter": {
       "require": "./dist/tiny-modules/basics/objFilter.cjs",

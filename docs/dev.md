@@ -107,7 +107,6 @@ Inserts a new model into the AI session's models list. If the model already exis
 | `model.inputTokenLimit`            | `number`      | The input token limit for the model (optional).                                       |
 | `model.outputTokenLimit`           | `number`      | The output token limit for the model (optional).                                      |
 | `model.temperature`                | `number`      | The temperature setting for the model (optional).                                     |
-| `model.maxTemperature`             | `number`      | The maximum temperature setting for the model (optional).                            |
 | `model.topP`                       | `number`      | The top P setting for the model (optional).                                          |
 | `model.topK`                       | `number`      | The top K setting for the model (optional).                                          |
 | `model.supportedGenerationMethods` | `Array<string>`| The generation methods supported by the model (optional).                           |
@@ -134,7 +133,6 @@ const newModel = {
   inputTokenLimit: 1000,
   outputTokenLimit: 500,
   temperature: 0.7,
-  maxTemperature: 1.0,
   topP: 0.9,
   topK: 50,
   supportedGenerationMethods: ['text', 'image'],
