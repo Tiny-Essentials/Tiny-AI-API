@@ -2,6 +2,8 @@ import { jsonrepair } from 'jsonrepair';
 import TinyAiInstance2 from '../TinyAiInstance2.mjs';
 import errorCodes from '../utils/errorCodes.mjs';
 
+/** @typedef {import('../TinyAiInstance2.mjs').AiModel} AiModel */
+
 /**
  * Configures the Tiny AI Api to use the Google Gemini API.
  *
@@ -201,15 +203,6 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
    * - finalData.error: (If error occurred) contains message, status, and code
    */
   tinyGoogleAI._setGenContent(
-    /**
-     * @param {string} apiKey
-     * @param {boolean} isStream
-     * @param {any} data
-     * @param {string} model
-     * @param {function} streamingCallback
-     * @param {AbortController} controller
-     * @returns {any}
-     */
     (apiKey, isStream, data, model, streamingCallback, controller) =>
       new Promise((resolve, reject) => {
         // Request
@@ -463,12 +456,6 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
    * }
    */
   tinyGoogleAI._setGetModels(
-    /**
-     * @param {string} apiKey
-     * @param {number} pageSize
-     * @param {string} pageToken
-     * @returns {any}
-     */
     (apiKey, pageSize, pageToken) =>
       new Promise((resolve, reject) =>
         fetch(
@@ -482,11 +469,9 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
           .then((res) => res.json())
           .then((result) => {
             // Prepare final data
-            /** @type {*} */
-            const finalData = { _response: result };
+            /** @type {{ _response: any; newData: AiModel[] }} */
+            const finalData = { _response: result, newData: [] };
             if (!result.error) {
-              finalData.newData = [];
-
               // Update Token
               tinyGoogleAI._setNextModelsPageToken(result.nextPageToken);
 
@@ -551,17 +536,10 @@ export function setTinyGoogleAi(tinyGoogleAI, GEMINI_API_KEY, MODEL_DATA = 'gemi
    * }
    */
   tinyGoogleAI._setCountTokens(
-    /**
-     * @param {string} apiKey
-     * @param {string} model
-     * @param {AbortController} controller
-     * @param {any} data
-     * @returns {any}
-     */
     (apiKey, model, controller, data) =>
       new Promise((resolve, reject) => {
         const dataContent = requestBuilder(data);
-        const modelInfo = tinyGoogleAI.getModelData(model);
+        const modelInfo = model ? tinyGoogleAI.getModelData(model) : null;
         dataContent.model = modelInfo?.name;
 
         if (dataContent.contents?.length > 0) {

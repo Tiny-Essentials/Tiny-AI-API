@@ -4,14 +4,82 @@ import { encode as encodeBase64 } from 'js-base64';
 import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
 
 /**
+ * @typedef {{ name: string, type: string }} CustomValueDefinition
+ * Defines the name and expected data type for a custom value.
+ */
+
+/**
+ * @typedef {Object} CustomValue
+ * @property {string} name - The name of the custom value.
+ * @property {*} value - The actual value of the custom value.
+ */
+
+/**
+ * @typedef {Record<string, any>} HistoryUpdateData
+ * The data fields to update within the session.
+ */
+
+/**
+ * @typedef {Object} ModelInput - The model to insert.
+ * @property {*} _response - The raw response.
+ * @property {number} index - The index position.
+ * @property {string} id - The unique identifier for the model.
+ * @property {string} [name] - The name of the model.
+ * @property {string} [displayName] - The display name of the model.
+ * @property {string} [version] - The version of the model.
+ * @property {string} [description] - A description of the model.
+ * @property {number} [inputTokenLimit] - The input token limit for the model.
+ * @property {number} [outputTokenLimit] - The output token limit for the model.
+ * @property {number} [temperature] - The temperature setting for the model.
+ * @property {number} [topP] - The top P setting for the model.
+ * @property {number} [topK] - The top K setting for the model.
+ * @property {Array<string>} [supportedGenerationMethods] - The generation methods supported by the model.
+ * @property {Object} [category] - The category of the model.
+ * @property {string} category.id - The unique identifier for the category.
+ * @property {string} category.displayName - The display name of the category.
+ * @property {number} category.index - The index of the category.
+ */
+
+/**
+ * @typedef {Object} AIToolFunction
+ * @property {string} name - The name of the function to be called.
+ * @property {string} [description] - A description of what the function does, used by the model to choose when and how to call the function.
+ * @property {Record<string, any>} [parameters] - The parameters the functions accepts, described as a JSON Schema object.
+ * @property {boolean} [strict] - Whether to enable strict schema adherence when generating the function call.
+ */
+
+/**
+ * @typedef {Object} AITool
+ * @property {string} type - The type of the tool. Currently, only 'function' is supported.
+ * @property {AIToolFunction} function - The function definition.
+ */
+
+/**
+ * @typedef {Object} AIToolChoiceFunction
+ * @property {string} name - The name of the function to call.
+ */
+
+/**
+ * @typedef {Object} AIToolChoice
+ * @property {string} type - The type of the tool. Currently, only 'function' is supported.
+ * @property {AIToolChoiceFunction} function - The specific function to call.
+ */
+
+/**
  * @typedef {Object} SessionDataContent
- * @property {AIContentData[]} data
- * @property {number[]} ids
- * @property {{ data: Array<TokenCount>; [key: string]: * }} tokens
- * @property {{ data: Array<string>; [key: string]: * }} hash
- * @property {string|null} systemInstruction
- * @property {{ name: string; type: string; }[]} [customList]
- * @property {string|null} model
+ * @property {AIContentData[]} data - Array of content data entries in the session.
+ * @property {number[]} ids - Array of unique IDs corresponding to the content data.
+ * @property {{ data: Array<TokenCount>; [key: string]: any }} tokens - Token usage data categorized by message/field.
+ * @property {{ data: Array<string>; [key: string]: any }} hash - Hash values for content data entries.
+ * @property {string|null} systemInstruction - The system instruction guiding the AI's behavior.
+ * @property {CustomValueDefinition[]} [customList] - List of custom values and their types.
+ * @property {string|null} model - The currently selected AI model.
+ * @property {string|string[]|null} stop - Stop sequences for generation.
+ * @property {number|null} repeatPenalty - Penalty applied to repeated tokens.
+ * @property {Record<string, number>|null} logitBias - Logit bias applied to specific tokens.
+ * @property {number|null} seed - Random seed for reproducible results.
+ * @property {AITool[]|null} tools - List of available tools for the AI.
+ * @property {string|AIToolChoice|null} toolChoice - Controls which (if any) tool is called by the model (e.g., 'auto', 'none', 'required', or a specific tool object).
  */
 
 /**
@@ -20,27 +88,27 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
 
 /**
  * @typedef {Object} AiModel
- * @property {any} _response
- * @property {number} index
- * @property {string|null} name
- * @property {string|null} id
- * @property {string|null} displayName
- * @property {string|null} version
- * @property {string|null} description
- * @property {number|null} inputTokenLimit
- * @property {number|null} outputTokenLimit
- * @property {number|null} temperature
- * @property {number|null} topP
- * @property {number|null} topK
- * @property {string[]} [supportedGenerationMethods]
+ * @property {any} _response - The raw response object from the API.
+ * @property {number} index - The index position of the model.
+ * @property {string|null} name - The name of the model.
+ * @property {string|null} id - The unique identifier for the model.
+ * @property {string|null} displayName - The user-friendly display name.
+ * @property {string|null} version - The model version.
+ * @property {string|null} description - A brief description of the model.
+ * @property {number|null} inputTokenLimit - Maximum input tokens allowed.
+ * @property {number|null} outputTokenLimit - Maximum output tokens allowed.
+ * @property {number|null} temperature - Sampling temperature.
+ * @property {number|null} topP - Nucleus sampling parameter.
+ * @property {number|null} topK - Top-K sampling parameter.
+ * @property {string[]} [supportedGenerationMethods] - Methods the model supports (e.g., 'text', 'vision').
  */
 
 /**
  * @typedef {Object} AiCategory
- * @property {string} category
- * @property {string} displayName
- * @property {number} index
- * @property {AiModel[]} data
+ * @property {string} category - The category identifier.
+ * @property {string} displayName - The display name of the category.
+ * @property {number} index - The index position of the category.
+ * @property {AiModel[]} data - Array of models belonging to this category.
  */
 
 /**
@@ -56,10 +124,20 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  */
 
 /**
+ * @typedef {Object} AIToolCall
+ * @property {string} id - Unique ID for the tool call.
+ * @property {string} type - The type of the tool call (e.g., 'function').
+ * @property {{ name: string, arguments: string }} function - Details about the function to be called.
+ */
+
+/**
  * @typedef {Object} AIContentData
- * @property {AIContentInput} content
- * @property {string} role
- * @property {string|number|undefined} [finishReason]
+ * @property {AIContentInput} [content] - The input content (text or image).
+ * @property {string} role - The role of the message ('user', 'assistant', 'system', 'tool').
+ * @property {string|number|undefined} [finishReason] - The reason the generation stopped.
+ * @property {AIToolCall[]} [tool_calls] - Array of tool calls requested by the model.
+ * @property {string} [tool_call_id] - The ID of a specific tool call (used when role is 'tool').
+ * @property {string} [name] - The name of the content/message or function.
  */
 
 /**
@@ -67,11 +145,19 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  */
 
 /**
+ * @typedef {Object} CountTokensResult
+ * @property {any} _response
+ * @property {number|null} totalTokens
+ * @property {number|null} cachedContentTokenCount
+ * @property {{ tokenCount: number|null, modality: string|null }} [promptTokensDetails]
+ */
+
+/**
  * Tiny AI Server Communication API (OpenAI Standard)
  * -----------------------------
  * This class manages AI session data natively using the OpenAI API structure.
- * It uses 'role' and 'content', making it perfect for local models via
- * LM Studio, vLLM, or the official OpenAI API.
+ * It uses 'role', 'content', and supports 'tools'/'tool_calls' making it perfect
+ * for local models via LM Studio, vLLM, or the official OpenAI API.
  *
  * **Note**: This script does not automatically track token count natively since
  * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
@@ -301,9 +387,10 @@ class TinyAiInstance2 {
    * Sets file data natively formatted for OpenAI Vision APIs.
    * Converts plain data into an image URI structure.
    *
-   * @param {string} mime - The MIME type of the file.
+   * @param {string} mime - The MIME type of the file (e.g., 'image/jpeg').
    * @param {string} data - The file content (base64 or string).
    * @param {boolean} [isBase64=false] - Whether data is already base64 encoded.
+   * @returns {AIContentImageInput} The formatted image input object.
    */
   static imageToBase64(mime, data, isBase64 = false) {
     return {
@@ -319,16 +406,15 @@ class TinyAiInstance2 {
    * Initializes internal variables, sets up initial configurations for handling AI models,
    * session history, and content generation, with the option to use a single or multiple instances.
    *
-   * @param {boolean} [isSingle] - If true, configures the instance to handle a single session only.
+   * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
    */
   constructor(isSingle = false) {
     this._isSingle = isSingle;
 
     /**
      * Updates an existing entry in the session history.
-     *
      * @param {string} id - The session identifier.
-     * @param {Record<string, any>} data - Data fields to update within the session.
+     * @param {HistoryUpdateData} data - Data fields to update within the session.
      * @returns {boolean} True if the update succeeded, false otherwise.
      */
     this.#_insertIntoHistory = function (id, data) {
@@ -344,18 +430,20 @@ class TinyAiInstance2 {
     // Is single instance
     if (this._isSingle) {
       this.startDataId('main', true);
-      // @ts-ignore
-      this.startDataId = null;
-      // @ts-ignore
-      this.stopDataId = null;
-      // @ts-ignore
-      this.selectDataId = null;
+      this.startDataId = () => {
+        throw new Error('startDataId disabled in the single instance mode!');
+      };
+      this.stopDataId = () => {
+        throw new Error('stopDataId disabled in the single instance mode!');
+      };
+      this.selectDataId = () => {
+        throw new Error('selectDataId disabled in the single instance mode!');
+      };
     }
   }
 
   /**
    * Capitalizes the first letter of the provided string.
-   *
    * @param {string} str - The input string to capitalize.
    * @returns {string} The string with the first character in uppercase.
    */
@@ -371,8 +459,7 @@ class TinyAiInstance2 {
    * @param {*} value - The value to be assigned to the custom key.
    * @param {number} [tokenAmount] - The token amount associated with the custom value (optional).
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @throws {Error} If the custom value name is invalid (not a non-empty string) or conflicts with existing data.
-   * @returns {void} This method does not return a value.
+   * @throws {Error} If the custom value name is invalid or conflicts with existing data.
    */
   setCustomValue(name, value, tokenAmount, id) {
     if (typeof name === 'string' && name.length > 0 && name !== 'customList') {
@@ -390,11 +477,7 @@ class TinyAiInstance2 {
           const props = history.customList.find((item) => item.name === name);
           if (!props || typeof props.type !== 'string' || typeof props.name !== 'string') {
             if (typeof history[name] === 'undefined')
-              history.customList.push({
-                name,
-                // @ts-ignore
-                type: objType(value),
-              });
+              history.customList.push({ name, type: objType(value)?.toString() ?? '' });
             else throw new Error('This value name is already being used!');
           } else if (props.type !== objType(value))
             throw new Error(
@@ -425,7 +508,6 @@ class TinyAiInstance2 {
    * @param {string} name - The name of the custom value to reset.
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
    * @throws {Error} If the custom value name is invalid or does not match an existing entry.
-   * @returns {void} This method does not return a value.
    */
   resetCustomValue(name, id) {
     if (typeof name === 'string' && name.length > 0 && name !== 'customList') {
@@ -470,7 +552,6 @@ class TinyAiInstance2 {
    * @param {string} name - The name of the custom value to erase.
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
    * @throws {Error} If the custom value name is invalid or does not exist.
-   * @returns {void} This method does not return a value.
    */
   eraseCustomValue(name, id) {
     this.resetCustomValue(name, id);
@@ -501,7 +582,7 @@ class TinyAiInstance2 {
    * Retrieves the list of custom values from the selected session history.
    *
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @returns {Array<*>} An array of custom values if available, or an empty array if no custom values exist.
+   * @returns {CustomValueDefinition[]} An array of custom value definitions if available, or an empty array if no custom values exist.
    */
   getCustomValueList(id) {
     const history = this.getData(id);
@@ -679,9 +760,177 @@ class TinyAiInstance2 {
   }
 
   /**
+   * Set the stop sequences for the AI session.
+   *
+   * @param {string|string[]|null} value - The stop sequence(s) to be used.
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {void} This function does not return a value.
+   */
+  setStop(value, id) {
+    if (typeof value === 'string' || Array.isArray(value) || value === null) {
+      const selectedId = this.getId(id);
+      this.#_insertIntoHistory(selectedId, { stop: value });
+      this.#emit('setStop', value, selectedId);
+      return;
+    }
+    throw new Error('Invalid stop value. Must be a string, array, or null!');
+  }
+
+  /**
+   * Get the stop sequences for an AI session.
+   *
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {string|string[]|null} The stop sequence(s), or null if not set.
+   */
+  getStop(id) {
+    const history = this.getData(id);
+    return history && typeof history.stop !== 'undefined' ? history.stop : null;
+  }
+
+  /**
+   * Set the logit bias for the AI session.
+   *
+   * @param {Record<string, number>|null} value - The logit bias object.
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {void} This function does not return a value.
+   */
+  setLogitBias(value, id) {
+    if (isJsonObject(value) || value === null) {
+      const selectedId = this.getId(id);
+      this.#_insertIntoHistory(selectedId, { logitBias: value });
+      this.#emit('setLogitBias', value, selectedId);
+      return;
+    }
+    throw new Error('Invalid logitBias value. Must be an object or null!');
+  }
+
+  /**
+   * Get the logit bias for an AI session.
+   *
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {Record<string, number>|null} The logit bias object, or null if not set.
+   */
+  getLogitBias(id) {
+    const history = this.getData(id);
+    return history && isJsonObject(history.logitBias) ? history.logitBias : null;
+  }
+
+  /**
+   * Set the repeat penalty for an AI session.
+   *
+   * @param {number|null} value - The repeat penalty value.
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {void} This function does not return a value.
+   */
+  setRepeatPenalty(value, id) {
+    if ((typeof value === 'number' && !Number.isNaN(value)) || value === null) {
+      const selectedId = this.getId(id);
+      this.#_insertIntoHistory(selectedId, { repeatPenalty: value });
+      this.#emit('setRepeatPenalty', value, selectedId);
+      return;
+    }
+    throw new Error('Invalid repeatPenalty value!');
+  }
+
+  /**
+   * Get the repeat penalty for an AI session.
+   *
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {number | null} The repeat penalty value, or null if not set.
+   */
+  getRepeatPenalty(id) {
+    const history = this.getData(id);
+    return history && typeof history.repeatPenalty === 'number' ? history.repeatPenalty : null;
+  }
+
+  /**
+   * Set the random seed for an AI session.
+   *
+   * @param {number|null} value - The seed value.
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {void} This function does not return a value.
+   */
+  setSeed(value, id) {
+    if ((typeof value === 'number' && !Number.isNaN(value)) || value === null) {
+      const selectedId = this.getId(id);
+      this.#_insertIntoHistory(selectedId, { seed: value });
+      this.#emit('setSeed', value, selectedId);
+      return;
+    }
+    throw new Error('Invalid seed value!');
+  }
+
+  /**
+   * Get the random seed for an AI session.
+   *
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {number | null} The seed value, or null if not set.
+   */
+  getSeed(id) {
+    const history = this.getData(id);
+    return history && typeof history.seed === 'number' ? history.seed : null;
+  }
+
+  /**
+   * Set the list of available tools for the AI session.
+   *
+   * @param {AITool[]|null} value - The array of tool definitions.
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {void} This function does not return a value.
+   */
+  setTools(value, id) {
+    if (Array.isArray(value) || value === null) {
+      const selectedId = this.getId(id);
+      this.#_insertIntoHistory(selectedId, { tools: value });
+      this.#emit('setTools', value, selectedId);
+      return;
+    }
+    throw new Error('Invalid tools value. Must be an array or null!');
+  }
+
+  /**
+   * Get the list of available tools for an AI session.
+   *
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {AITool[]|null} The list of tools, or null if not set.
+   */
+  getTools(id) {
+    const history = this.getData(id);
+    return history && Array.isArray(history.tools) ? history.tools : null;
+  }
+
+  /**
+   * Set the tool choice for the AI session.
+   *
+   * @param {string|AIToolChoice|null} value - The chosen tool or tool configuration (e.g. 'auto', 'none', 'required', or a specific function object).
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {void} This function does not return a value.
+   */
+  setToolChoice(value, id) {
+    if (typeof value === 'string' || isJsonObject(value) || value === null) {
+      const selectedId = this.getId(id);
+      this.#_insertIntoHistory(selectedId, { toolChoice: value });
+      this.#emit('setToolChoice', value, selectedId);
+      return;
+    }
+    throw new Error('Invalid toolChoice value!');
+  }
+
+  /**
+   * Get the tool choice for an AI session.
+   *
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @returns {string|AIToolChoice|null} The chosen tool choice, or null if not set.
+   */
+  getToolChoice(id) {
+    const history = this.getData(id);
+    return history && typeof history.toolChoice !== 'undefined' ? history.toolChoice : null;
+  }
+
+  /**
    * Set the model for an AI session.
    *
-   * @param {string} data - The model to be set (must be a string).
+   * @param {string} data - The model identifier to be set.
    * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
    * @returns {void} This function does not return a value.
    */
@@ -696,7 +945,7 @@ class TinyAiInstance2 {
    * Get the model for an AI session.
    *
    * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {string | null} The model, or null if not set.
+   * @returns {string | null} The model identifier, or null if not set.
    */
   getModel(id) {
     const history = this.getData(id);
@@ -714,10 +963,9 @@ class TinyAiInstance2 {
   }
 
   /**
-   * Set the token for the next page of models in the AI session.
-   *
+   * Sets the token for the next page of models in the AI session.
    * @param {string} nextModelsPageToken - The token for the next models page.
-   * @returns {void} This function does not return a value.
+   * @returns {void}
    */
   _setNextModelsPageToken(nextModelsPageToken) {
     this._nextModelsPageToken =
@@ -725,10 +973,9 @@ class TinyAiInstance2 {
   }
 
   /**
-   * Set the function to retrieve models for the AI session.
-   *
-   * @param {Function} getModels - The function to retrieve models.
-   * @returns {void} This function does not return a value.
+   * Sets the function to retrieve models for the AI session.
+   * @param {function(string, number, string|null): Promise<{ newData: AiModel[]; _response: any; }>} getModels - The function to retrieve models.
+   * @returns {void}
    */
   _setGetModels(getModels) {
     this.#_getModels = typeof getModels === 'function' ? getModels : null;
@@ -739,7 +986,7 @@ class TinyAiInstance2 {
    *
    * @param {number} [pageSize=50] - The number of models to retrieve per page. Defaults to 50.
    * @param {string|null} [pageToken=null] - The token for the next page of models, if available. Defaults to null.
-   * @returns {Array<*>} The list of models retrieved.
+   * @returns {Array<AiModel|AiCategory>} The list of models retrieved.
    * @throws {Error} If no model list API function is defined.
    */
   getModels(pageSize = 50, pageToken = null) {
@@ -790,28 +1037,11 @@ class TinyAiInstance2 {
   }
 
   /**
-   * Insert a new model into the AI session's models list.
+   * Inserts a new model into the AI session's models list.
    * If the model already exists, it will not be inserted again.
    *
-   * @param {Object} model - The model to insert.
-   * @param {*} model._response - The raw response.
-   * @param {number} model.index - The index position.
-   * @param {string} model.id - The unique identifier for the model.
-   * @param {string} [model.name] - The name of the model.
-   * @param {string} [model.displayName] - The display name of the model.
-   * @param {string} [model.version] - The version of the model.
-   * @param {string} [model.description] - A description of the model.
-   * @param {number} [model.inputTokenLimit] - The input token limit for the model.
-   * @param {number} [model.outputTokenLimit] - The output token limit for the model.
-   * @param {number} [model.temperature] - The temperature setting for the model.
-   * @param {number} [model.topP] - The top P setting for the model.
-   * @param {number} [model.topK] - The top K setting for the model.
-   * @param {Array<string>} [model.supportedGenerationMethods] - The generation methods supported by the model.
-   * @param {Object} [model.category] - The category of the model.
-   * @param {string} model.category.id - The unique identifier for the category.
-   * @param {string} model.category.displayName - The display name of the category.
-   * @param {number} model.category.index - The index of the category.
-   * @returns {Record<string, any>|null} The inserted model data, or null if the model already exists.
+   * @param {ModelInput} model - The model to insert.
+   * @returns {AiModel|null} The inserted model data, or null if the model already exists.
    */
   _insertNewModel(model) {
     if (!isJsonObject(model)) throw new Error('Model data must be a valid object.');
@@ -878,11 +1108,8 @@ class TinyAiInstance2 {
   }
 
   /**
-   * Sets a function to handle the count of tokens in the AI session.
-   * If a valid function is provided, it will be used to count tokens.
-   *
-   * @param {Function} countTokens - The function that will handle the token count.
-   * @throws {Error} Throws an error if the provided value is not a function.
+   * Sets the function to handle the count of tokens in the AI session.
+   * @param {function(string, string|null, AbortController|null, AIContentData[]): Promise<CountTokensResult>} countTokens - The function that will handle the token count.
    * @returns {void}
    */
   _setCountTokens(countTokens) {
@@ -891,13 +1118,12 @@ class TinyAiInstance2 {
 
   /**
    * Counts the tokens based on the provided data and model, using a defined token counting function.
-   * If the function to count tokens is not set, an error is thrown.
    *
    * @param {Record<string, any>} data - The data that needs to be tokenized.
    * @param {string} [model] - The model to use for counting tokens. If not provided, the default model is used.
    * @param {AbortController} [controller] - The controller that manages the process or settings for counting tokens.
-   * @throws {Error} Throws an error if no token counting function is defined.
    * @returns {Record<string, any>} The count of tokens.
+   * @throws {Error} Throws an error if no token counting function is defined.
    */
   countTokens(data, model, controller) {
     if (typeof this.#_countTokens === 'function')
@@ -911,7 +1137,6 @@ class TinyAiInstance2 {
 
   /**
    * Sets the error codes for the current session.
-   *
    * @param {Record<string|number, string|ErrorCode>} errors - The error codes to set, typically an object containing error code definitions.
    * @returns {void}
    */
@@ -938,8 +1163,7 @@ class TinyAiInstance2 {
 
   /**
    * Sets the content generation callback function for the AI session.
-   *
-   * @param {Function} callback - The callback function that handles content generation.
+   * @param {function(string, boolean, AIContentData[], string|null, function, AbortController|null): Promise<Record<string, any>>} callback - The callback function that handles content generation.
    * @returns {void}
    */
   _setGenContent(callback) {
@@ -949,10 +1173,10 @@ class TinyAiInstance2 {
   /**
    * Generates content for the AI session.
    *
-   * @param {Record<string, any>} data - The data for content generation.
+   * @param {Record<string, any>} data - The data for content generation (messages, system instruction, etc.).
    * @param {string} [model] - The model to be used for content generation. If not provided, the default model is used.
    * @param {AbortController} [controller] - The controller managing the content generation process.
-   * @param {Function} [streamCallback] - The callback function for streaming content (optional).
+   * @param {function(any, boolean, Record<string, any>, string|null, any, AbortController|null): void} [streamCallback] - The callback function for streaming content (optional).
    * @returns {Record<string, any>} The generated content returned by the API.
    * @throws {Error} If no content generator API script is defined.
    */
@@ -992,7 +1216,6 @@ class TinyAiInstance2 {
 
   /**
    * Get the currently selected session history ID.
-   * If no ID is provided, it returns the default selected session history ID.
    *
    * @param {string} [id] - The session history ID to retrieve. If not provided, it uses the default selected ID.
    * @returns {string|null} The selected session history ID, or `null` if no history ID is selected.
@@ -1335,7 +1558,7 @@ class TinyAiInstance2 {
   /**
    * Sets a prompt for the selected session history.
    *
-   * @param {string} [promptData] - The prompt to be set for the session.
+   * @param {string} promptData - The prompt to be set for the session.
    * @param {number} [tokenAmount] - The number of tokens associated with the prompt (optional).
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
    * @throws {Error} If the provided session ID is invalid or the prompt data is not a string.
@@ -1378,7 +1601,7 @@ class TinyAiInstance2 {
   /**
    * Sets the first dialogue for the selected session history.
    *
-   * @param {string} [dialogue] - The dialogue to set as the first dialogue.
+   * @param {string} dialogue - The dialogue to set as the first dialogue.
    * @param {number} [tokenAmount] - The number of tokens associated with the dialogue (optional).
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
    * @throws {Error} Throws an error if the session ID is invalid or the dialogue is not a string.
@@ -1423,7 +1646,7 @@ class TinyAiInstance2 {
   /**
    * Sets a system instruction for the selected session history.
    *
-   * @param {string} [data] - The system instruction to set.
+   * @param {string} data - The system instruction to set.
    * @param {number} [tokenAmount] - The token count associated with the system instruction (optional).
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
    * @throws {Error} If the session history ID is invalid or the provided data is not a string.
@@ -1505,7 +1728,7 @@ class TinyAiInstance2 {
    *
    * @param {string} id - The session ID for the new data session.
    * @param {boolean} [selected=false] - A flag to indicate whether this session should be selected as the active session.
-   * @returns {SessionData} The newly created session data, which includes an empty data array, an empty IDs array, and null values for system instruction and model.
+   * @returns {SessionData} The newly created session data.
    */
   startDataId(id, selected = false) {
     this.history[id] = {
@@ -1515,6 +1738,12 @@ class TinyAiInstance2 {
       hash: { data: [] },
       systemInstruction: null,
       model: null,
+      stop: null,
+      repeatPenalty: null,
+      logitBias: null,
+      seed: null,
+      tools: null,
+      toolChoice: null,
     };
     if (selected) this.selectDataId(id);
     this.#emit('startDataId', this.history[id], id, selected ? true : false);

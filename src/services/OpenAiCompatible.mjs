@@ -2,6 +2,8 @@ import TinyAiInstance2 from '../TinyAiInstance2.mjs';
 import errorCodes from '../utils/errorCodes.mjs';
 
 /** @typedef {import('../TinyAiInstance2.mjs').AIContentData} AIContentData */
+/** @typedef {import('../TinyAiInstance2.mjs').AIToolCall} AIToolCall */
+/** @typedef {import('../TinyAiInstance2.mjs').AiModel} AiModel */
 
 /**
  * Configures the Tiny AI Api to use an OpenAI-compatible API (e.g., LM Studio, Ollama, OpenAI).
@@ -30,6 +32,7 @@ export function setTinyOpenAiCompatible(
     stop: { text: 'Natural stop point of the model or provided stop sequence.', hide: true },
     length: { text: 'The maximum number of tokens as specified in the request was reached.' },
     content_filter: { text: 'The response was flagged and stopped by the safety content filter.' },
+    tool_calls: { text: 'The model decided to call one or more tools.', hide: true },
     null: { text: 'API response is still in progress or no finish reason was provided.' },
   });
 
@@ -65,30 +68,43 @@ export function setTinyOpenAiCompatible(
 
     if (typeof config.model === 'string') requestBody.model = config.model;
 
+    // Process Message Data including Tool properties
     for (const item of data) {
       if (!item) continue;
-      requestBody.messages.push({
-        role: typeof item.role === 'string' ? item.role : 'user',
-        content: item.content,
-      });
+
+      /** @type {AIContentData} */
+      const msg = { role: typeof item.role === 'string' ? item.role : 'user' };
+      if (item.content !== undefined) msg.content = item.content;
+      if (item.tool_calls) msg.tool_calls = item.tool_calls;
+      if (item.tool_call_id) msg.tool_call_id = item.tool_call_id;
+      if (item.name) msg.name = item.name;
+
+      requestBody.messages.push(msg);
     }
 
     // Assign generation parameters
     if (!cacheMode) {
       /**
-       * @param {number|null} val
+       * @param {any} val
        * @param {string} key
        */
-      const setIfNumber = (val, key) => {
+      const setIfValid = (val, key) => {
         // @ts-ignore
-        if (typeof val === 'number') requestBody[key] = val;
+        if (val !== undefined && val !== null) requestBody[key] = val;
       };
-      setIfNumber(tinyOpenAI.getMaxOutputTokens(), 'max_tokens');
-      setIfNumber(tinyOpenAI.getTemperature(), 'temperature');
-      setIfNumber(tinyOpenAI.getTopP(), 'top_p');
-      setIfNumber(tinyOpenAI.getTopK(), 'top_k');
-      setIfNumber(tinyOpenAI.getPresencePenalty(), 'presence_penalty');
-      setIfNumber(tinyOpenAI.getFrequencyPenalty(), 'frequency_penalty');
+
+      setIfValid(tinyOpenAI.getMaxOutputTokens(), 'max_tokens');
+      setIfValid(tinyOpenAI.getTemperature(), 'temperature');
+      setIfValid(tinyOpenAI.getTopP(), 'top_p');
+      setIfValid(tinyOpenAI.getTopK(), 'top_k');
+      setIfValid(tinyOpenAI.getPresencePenalty(), 'presence_penalty');
+      setIfValid(tinyOpenAI.getFrequencyPenalty(), 'frequency_penalty');
+      setIfValid(tinyOpenAI.getStop(), 'stop');
+      setIfValid(tinyOpenAI.getRepeatPenalty(), 'repeat_penalty');
+      setIfValid(tinyOpenAI.getLogitBias(), 'logit_bias');
+      setIfValid(tinyOpenAI.getSeed(), 'seed');
+      setIfValid(tinyOpenAI.getTools(), 'tools');
+      setIfValid(tinyOpenAI.getToolChoice(), 'tool_choice');
     }
 
     return requestBody;
@@ -98,15 +114,6 @@ export function setTinyOpenAiCompatible(
    * Internal method integrating with OpenAI API (generateContent or stream).
    */
   tinyOpenAI._setGenContent(
-    /**
-     * @param {string} apiKey
-     * @param {boolean} isStream
-     * @param {any} data
-     * @param {string} model
-     * @param {function} streamingCallback
-     * @param {AbortController} controller
-     * @returns {any}
-     */
     (apiKey, isStream, data, model, streamingCallback, controller) =>
       new Promise((resolve, reject) => {
         const requestBody = requestBuilder(data, { model });
@@ -134,6 +141,7 @@ export function setTinyOpenAiCompatible(
 
         /**
          * Parses and appends content candidates to the final output object.
+         * Handles native string content and tool_calls objects.
          *
          * @param {ObjectAny} result - API response chunk or full response.
          * @param {ObjectAny} finalData - Structure to map the content into.
@@ -146,9 +154,15 @@ export function setTinyOpenAiCompatible(
             const role = messageObj.role || 'assistant';
             const finishReason =
               typeof item.finish_reason === 'string' ? item.finish_reason : undefined;
+            const toolCalls = messageObj.tool_calls;
 
-            if (text || finishReason) {
-              finalData.contents.push({ role, content: text, finishReason });
+            if (text || finishReason || toolCalls) {
+              /** @type {ObjectAny} */
+              const structuredContent = { role, content: text };
+              if (finishReason) structuredContent.finishReason = finishReason;
+              if (toolCalls) structuredContent.tool_calls = toolCalls;
+
+              finalData.contents.push(structuredContent);
             }
           }
         };
@@ -173,7 +187,7 @@ export function setTinyOpenAiCompatible(
         };
 
         /**
-         * Handles Server-Sent Events (SSE) streaming format.
+         * Handles Server-Sent Events (SSE) streaming format, compiling tool_call arguments.
          *
          * @async
          * @param {ReadableStream} stream - The fetch body stream.
@@ -216,9 +230,39 @@ export function setTinyOpenAiCompatible(
 
                     for (let i = 0; i < tinyData.contents.length; i++) {
                       if (!streamCache[i])
-                        streamCache[i] = { content: '', role: tinyData.contents[i].role };
+                        streamCache[i] = {
+                          content: '',
+                          role: tinyData.contents[i].role,
+                          tool_calls: [],
+                        };
+
+                      // Process Content
                       streamCache[i].content += tinyData.contents[i].content || '';
                       tinyData.contents[i].content = streamCache[i].content;
+
+                      // Process Streaming Tool Calls
+                      let tool_calls = tinyData.contents[i].tool_calls;
+                      if (tool_calls) {
+                        for (const tcDelta of tool_calls) {
+                          const idx = tcDelta.index;
+                          if (!streamCache[i].tool_calls[idx]) {
+                            streamCache[i].tool_calls[idx] = {
+                              id: '',
+                              type: 'function',
+                              function: { name: '', arguments: '' },
+                            };
+                          }
+                          if (tcDelta.id) streamCache[i].tool_calls[idx].id = tcDelta.id;
+                          if (tcDelta.type) streamCache[i].tool_calls[idx].type = tcDelta.type;
+                          if (tcDelta.function?.name)
+                            streamCache[i].tool_calls[idx].function.name += tcDelta.function.name;
+                          if (tcDelta.function?.arguments)
+                            streamCache[i].tool_calls[idx].function.arguments +=
+                              tcDelta.function.arguments;
+                        }
+                        tinyData.contents[i].tool_calls = streamCache[i].tool_calls;
+                        tool_calls = tinyData.contents[i].tool_calls;
+                      }
                     }
 
                     streamingCallback({ contents: tinyData.contents, done: false });
@@ -234,7 +278,11 @@ export function setTinyOpenAiCompatible(
             // Construct the final resolved object replicating the non-stream format
             const finalData = finalPromise(streamResult);
             for (let i = 0; i < finalData.contents.length; i++) {
-              if (streamCache[i]) finalData.contents[i].content = streamCache[i].content;
+              if (streamCache[i]) {
+                finalData.contents[i].content = streamCache[i].content;
+                if (streamCache[i].tool_calls.length > 0)
+                  finalData.contents[i].tool_calls = streamCache[i].tool_calls;
+              }
             }
             resolve(finalData);
           } catch (err) {
@@ -278,10 +326,6 @@ export function setTinyOpenAiCompatible(
    * Registers a function to fetch and organize available models.
    */
   tinyOpenAI._setGetModels(
-    /**
-     * @param {string} apiKey
-     * @returns {any}
-     */
     (apiKey) =>
       new Promise((resolve, reject) => {
         fetch(`${apiUrl}/models`, {
@@ -293,6 +337,7 @@ export function setTinyOpenAiCompatible(
         })
           .then((res) => res.json())
           .then((result) => {
+            /** @type {{ _response: any; newData: AiModel[] }} */
             const finalData = { _response: result, newData: [] };
             if (!result.error && Array.isArray(result.data)) {
               for (let i = 0; i < result.data.length; i++) {
@@ -306,7 +351,6 @@ export function setTinyOpenAiCompatible(
                   version: undefined,
                   description: modelInfo.owned_by || 'Local Model',
                 });
-                // @ts-ignore
                 if (inserted) finalData.newData.push(inserted);
               }
             } else {
