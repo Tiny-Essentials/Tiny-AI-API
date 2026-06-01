@@ -1,5 +1,3 @@
-import { TinyGoogleAi, setTinyGoogleAi } from './services/Google.mjs';
-import { TinyOpenAiCompatible, setTinyOpenAiCompatible } from './services/OpenAiCompatible.mjs';
 import TinyAiInstance from './TinyAiInstance.mjs';
 import TinyAiInstance2 from './TinyAiInstance2.mjs';
 
@@ -15,10 +13,6 @@ import {
 export {
   TinyAiInstance,
   TinyAiInstance2,
-  TinyOpenAiCompatible,
-  setTinyOpenAiCompatible,
-  TinyGoogleAi,
-  setTinyGoogleAi,
   checkAiObj,
   cloneAiObjTypeOrder,
   extendAiObjType,
