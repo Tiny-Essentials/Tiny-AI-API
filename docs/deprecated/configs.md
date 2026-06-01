@@ -1,3 +1,26 @@
+### `setApiKey(apiKey)`
+
+Sets the API key to be used for the AI session.
+
+#### Parameters
+
+| Name      | Type     | Description                |
+|-----------|----------|----------------------------|
+| `apiKey`  | `string` | The API key to be stored.  |
+
+#### Returns
+
+- **`void`**: This method does not return any value.
+
+#### Behavior
+
+- Stores the provided `apiKey` if it's a string.
+- If the value is not a string, it sets the internal key to `null`.
+
+> **Note:** This key is stored internally and is not associated with any session history.
+
+---
+
 ### `setPrompt(promptData, tokenAmount, id)`
 
 Sets a prompt for the selected session history.
@@ -193,6 +216,174 @@ if (firstDialogue) {
 ```
 
 This method allows you to retrieve the first dialogue from the selected session. If the first dialogue exists and is a valid non-empty string, it will be returned; otherwise, `null` will be returned.
+
+---
+
+### `setFileData(mime, data, isBase64, tokenAmount, id)`
+
+Sets file data for the selected session history.
+
+---
+
+#### Parameters
+
+| Name        | Type      | Required | Description                                                                                               |
+|-------------|-----------|----------|-----------------------------------------------------------------------------------------------------------|
+| `mime`      | `string`  | Yes      | The MIME type of the file (e.g., 'text/plain', 'application/pdf') (optional).                                         |
+| `data`      | `string`  | Yes      | The file content, either as a string or base64-encoded (optional).                                                    |
+| `isBase64`  | `boolean` | No       | A flag indicating whether the `data` is already base64-encoded. Defaults to `false`.                      |
+| `tokenAmount`| `number` | No       | The token count associated with the file data (optional).                                                 |
+| `id`        | `string`  | No       | The session ID. If omitted, the currently selected session history ID will be used.                       |
+
+---
+
+#### Returns
+
+| Type   | Description |
+|--------|-------------|
+| `void` | This method does not return a value. |
+
+---
+
+#### Behavior
+
+- Uses `this.getId(id)` to retrieve the selected session ID.
+- If the session ID is valid, it processes the `mime`, `data`, and optionally the `isBase64` and `tokenAmount` values.
+- The file data is stored in the session history under the `file` property, and the base64 encoding is performed if necessary.
+- The file data and hash are then stored in the session history, and the `setFileData` event is emitted.
+- If an invalid session ID or data/mime type is provided, an error is thrown.
+
+---
+
+#### Example Usage
+
+```js
+sessionManager.setFileData(
+  'application/pdf', 
+  'file_content_in_base64_or_plain_text', 
+  true, 
+  123, 
+  'session123'
+);
+```
+
+This would set the file data for the session with ID `'session123'`, using the MIME type `'application/pdf'` and associating the file with a token count of 123.
+
+---
+
+#### Implementation
+
+This method allows you to store file data (either as raw text or base64-encoded) along with an optional MIME type and token count in a selected session history. It also calculates a hash for the file data and emits an event with the new file data.
+
+---
+
+### `removeFileData(id)`
+
+Removes file data from the selected session history.
+
+---
+
+#### Parameters
+
+| Name        | Type     | Required | Description                                                                                   |
+|-------------|----------|----------|-----------------------------------------------------------------------------------------------|
+| `id`        | `string` | No       | The session ID. If omitted, the currently selected session history ID will be used.            |
+
+---
+
+#### Returns
+
+| Type   | Description |
+|--------|-------------|
+| `void` | This method does not return a value. |
+
+---
+
+#### Behavior
+
+- Uses `this.getId(id)` to retrieve the selected session ID.
+- If the session ID is valid, it deletes the `file`, `hash.file`, and `tokens.file` properties from the session's history.
+- The `setFileData` event is emitted with `null` values, indicating the removal of the file data.
+- If an invalid session ID is provided, an error is thrown.
+
+---
+
+#### Example Usage
+
+```js
+sessionManager.removeFileData('session123');
+```
+
+This would remove the file data from the session with ID `'session123'`.
+
+---
+
+#### Implementation
+
+This method allows you to remove any stored file data from a specific session's history, including the file content, its hash, and associated token data. It also emits an event to indicate that the file data has been removed.
+
+---
+
+### `getFileData(id)`
+
+Retrieves file data from the selected session history.
+
+---
+
+#### Parameters
+
+| Name        | Type     | Required | Description                                                                                   |
+|-------------|----------|----------|-----------------------------------------------------------------------------------------------|
+| `id`        | `string` | No       | The session ID. If omitted, the currently selected session history ID will be used.            |
+
+---
+
+#### Returns
+
+| Type      | Description                                                      |
+|-----------|------------------------------------------------------------------|
+| `Object`  | The file data, including MIME type and encoded content, or `null` if no file data is found. |
+
+---
+
+#### Throws
+
+| Type      | Description                                                 |
+|-----------|-------------------------------------------------------------|
+| `Error`   | If no valid session history ID is found.                    |
+
+---
+
+#### Behavior
+
+- Uses `this.getId(id)` to retrieve the selected session ID.
+- If the session is valid and contains file data with valid MIME and data fields (both of type string), it returns the file data, which includes:
+  - `mime`: The MIME type of the file (e.g., `'text/plain'`, `'application/pdf'`).
+  - `data`: The base64-encoded file content.
+- If the session history does not contain valid file data, it returns `null`.
+- If an invalid session ID is provided, an error is thrown.
+
+---
+
+#### Example Usage
+
+```js
+const fileData = sessionManager.getFileData('session123');
+if (fileData) {
+  console.log(fileData.mime);  // e.g., 'application/pdf'
+  console.log(fileData.data);  // base64-encoded content
+} else {
+  console.log('No file data found');
+}
+```
+
+This would retrieve and display the MIME type and base64-encoded content of the file data from the session with ID `'session123'`, or display `'No file data found'` if no file data exists.
+
+---
+
+#### Implementation
+
+This method provides access to the file data stored in the selected session's history, including the MIME type and the base64-encoded content of the file. If no valid file data exists, it returns `null`.
 
 ---
 

@@ -1,6 +1,6 @@
-## Constructor: `new TinyAiInstance(isSingle = false)`
+## Constructor: `new TinyAiInstance2(isSingle = false)`
 
-Creates an instance of the **TinyAiInstance** class.
+Creates an instance of the **TinyAiInstance2** class.
 
 Initializes internal variables and sets up the base configuration for handling AI models, session history, and content generation. This class can operate in **single-session** mode or support **multiple sessions**.
 

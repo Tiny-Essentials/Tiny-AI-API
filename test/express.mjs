@@ -173,6 +173,10 @@ const jsLoader = async (filePath, fileName, req, res) => {
       `'/node_modules/tiny-essentials/dist/v1/libs/TinyMamdaniInferenceSystem.mjs'`,
     );
 
+    code = code.replace(
+      `import { objHash } from 'object-hash';`,
+      `import objHash from 'object-hash';`,
+    );
     res.type('application/javascript');
     res.send(code);
   } catch (err) {

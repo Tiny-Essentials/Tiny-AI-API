@@ -1,3 +1,244 @@
+### `buildContents(contents, item, role, rmFinishReason = false)`
+
+Builds a content object compatible with an AI session, optionally inserting it into an external array.
+
+#### Parameters
+
+| Name              | Type      | Default         | Description                                                                 |
+|-------------------|-----------|------------------|-----------------------------------------------------------------------------|
+| `contents`        | `Array`   | `undefined`      | An optional array to which the constructed content object will be pushed.  |
+| `item`            | `Object`  | **(required)**   | An object that contains either `parts` (array of content) or a `content` object. |
+| `role`            | `string`  | `undefined`      | Optional role to associate with the message (e.g., `"user"`, `"assistant"`). |
+| `rmFinishReason`  | `boolean` | `false`          | If set to `true`, removes the `finishReason` field from the result.        |
+
+#### Returns
+
+- **`Object`**: The constructed content object, if `contents` is not an array.
+- **`undefined`**: If the `contents` parameter is an array, the method pushes to the array and returns `undefined`.
+
+#### Behavior
+
+- Constructs a content object with validated parts using internal `#_partTypes`.
+- Includes a `role` if provided.
+- Includes a `finishReason` field unless `rmFinishReason` is explicitly `true`.
+- Supports both `item.parts` as an array or a singular `item.content` object.
+
+#### Example
+
+```js
+const message = session.buildContents(null, {
+  parts: [{ text: "Hello!" }],
+  finishReason: "stop"
+}, "user");
+```
+
+> **Note:** This method is flexible for both single and batched usage. If `contents` is provided as an array, it's assumed you are accumulating multiple content objects for submission.
+
+### `countTokens(data, model, controller)`
+
+Counts tokens by sending a request to an external API, processing the response, and returning relevant token data. If the function isn't set or the request fails, an error is thrown.
+
+#### Key Details
+
+- **Request Logic:**  
+  The method sends a POST request to an external API using the `fetch` function, passing the necessary `apiKey` and `model`. It also serializes the `dataContent` to be used in the request body.
+
+- **Response Handling:**  
+  The response from the API is processed to extract several pieces of token information, such as:
+  - **Total Tokens:** The total number of tokens used.
+  - **Cached Content Token Count:** The token count for any cached content.
+  - **Prompt Token Details:** Information about tokens used in the prompt (e.g., modality and token count).
+
+- **Error Handling:**  
+  If the API returns an error, it uses the `buildErrorData` function to capture and handle the error appropriately.
+
+- **Promise Usage:**  
+  Since the request is asynchronous, the method returns a `Promise` which resolves with the token data once the response is successfully received. If any error occurs during the request, it rejects the promise.
+
+#### Parameters
+
+| Name        | Type        | Description                                                                        |
+|-------------|-------------|------------------------------------------------------------------------------------|
+| `data`      | `Object`    | The data that needs to be tokenized.                                               |
+| `model`     | `string`    | The model to use for counting tokens.                                              |
+| `controller`| `Object`    | The controller for managing cancellation signals and controlling the fetch request. |
+
+#### Throws
+
+| Error Type | Description                                                                 |
+|------------|-----------------------------------------------------------------------------|
+| `Error`    | If no function is set to count tokens, or if the request fails.              |
+
+#### Returns
+
+| Type     | Description                                                                |
+|----------|--------------------------------------------------------------------------|
+| `Object` | The count of tokens, including `totalTokens`, `cachedContentTokenCount`, and `promptTokensDetails`. |
+
+#### Example
+
+```js
+// Set the function to count tokens
+tinyAi._setCountTokens(
+  (apiKey, model, controller, data) => 
+    new Promise((resolve, reject) => {
+      const dataContent = requestBuilder(data);  // Prepares data for the request
+      const modelInfo = tinyAi.getModelData(model);  // Retrieves model data
+      dataContent.model = modelInfo?.name;  // Adds model name to request
+      
+      // Check if contents are available to process
+      if (Array.isArray(dataContent.contents) && dataContent.contents.length > 0) {
+        fetch(`${apiUrl}/models/${model}:countTokens?key=${encodeURIComponent(apiKey)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ generateContentRequest: dataContent }),
+          signal: controller ? controller.signal : undefined,
+        })
+          .then((res) => res.json())  // Parse JSON response
+          .then((result) => {
+            const finalData = { _response: result };
+            
+            // Handle the successful response
+            if (!result.error) {
+              finalData.totalTokens = result.totalTokens || null;
+              finalData.cachedContentTokenCount = result.cachedContentTokenCount || null;
+              finalData.promptTokensDetails = result.promptTokensDetails || {};
+            } else {
+              // Handle errors
+              buildErrorData(result, finalData);
+            }
+
+            resolve(finalData);  // Resolve the promise with the final token data
+          })
+          .catch(reject);  // Reject promise on error
+      } else {
+        resolve({ _response: {}, totalTokens: null, cachedContentTokenCount: null });
+      }
+    })
+);
+
+// Example call:
+const tokenData = tinyAi.countTokens(data, model, controller);
+console.log(tokenData);
+```
+
+---
+
+### `getErrorCode(code)`
+
+This function retrieves error details based on the provided error code. It checks if there is any error data associated with the code and returns a structured object with the error message. If no error is found, it returns `null`.
+
+#### Key Details
+
+- **Error Lookup:**
+  - The method first checks if the `_errorCode` object exists.
+  - It looks for the provided error `code` within the `_errorCode` object.
+  
+- **Error Data Handling:**
+  - If the error data exists and is a string, it returns an object with the `text` key containing the error message.
+  - If the error data is an object and contains a `text` property, it returns that object.
+
+- **Return Value:**
+  - Returns an object containing the error message if found.
+  - If no error is found for the provided code, it returns `null`.
+
+#### Parameters
+
+| Name  | Type          | Description                                          |
+|-------|---------------|------------------------------------------------------|
+| `code`| `string|number` | The error code to look up in the `_errorCode` object. |
+
+#### Returns
+
+| Type     | Description                                                    |
+|----------|---------------------------------------------------------------|
+| `Object` | An object containing the error message in the `text` property, or `null` if the error is not found. |
+
+#### Example
+
+```js
+// Example error code lookup
+const errorDetails = tinyAi.getErrorCode(404);
+console.log(errorDetails);  // Output: { text: 'Not Found' }
+
+// Example with a custom error object
+const customErrorDetails = tinyAi.getErrorCode('SERVER_ERROR');
+console.log(customErrorDetails);  // Output: { text: 'Internal Server Error' }
+```
+
+---
+
+### `genContent(data, model, controller, streamCallback)`
+
+This function is responsible for generating content through a content generation API. It checks whether the content generation function (`#_genContentApi`) has been defined and then calls it to handle the actual API interaction.
+
+#### What Happens Inside:
+1. **API Function Check:**
+   - The function first checks if `#_genContentApi` is a defined function. If it is, it calls this function to generate content using the provided parameters.
+   - If `#_genContentApi` is not defined, it throws an error, indicating that no content generation API script has been set up.
+
+2. **Parameters:**
+   - **`data`**: The content generation input data (this could be a prompt or specific details for the API).
+   - **`model`**: Specifies which model to use for content generation (optional, defaults to a predefined model if not provided).
+   - **`controller`**: A controller object that may be used to manage the content generation process (e.g., for cancellation or timeouts).
+   - **`streamCallback`**: An optional callback function that handles streaming content if the API supports it.
+
+3. **Calling the Internal API Function:**
+   - If the API function exists, it is invoked with the following parameters:
+     - API key (`this.#_apiKey`)
+     - Streaming flag (`true/false`)
+     - The data provided (`data`)
+     - Model to use (either provided or default)
+     - Stream callback function (if provided)
+     - Controller (if provided)
+   - If no API script is defined, an error is thrown.
+
+### Setting the Content Generation Function:
+
+The actual content generation function is set using `._setGenContent()`. This function defines how the API request will be made, handles both streaming and non-streaming responses, and processes the results.
+
+1. **Request Handling:**
+   - A `Promise` is returned to handle the asynchronous request.
+   - The `requestBody` is created by calling `requestBuilder(data)`, which structures the provided data according to the API's expectations.
+
+2. **Usage Metadata:**
+   - The function defines a helper method `buildUsageMetada(result)` to process the token usage metadata returned by the API. This includes counting tokens for candidates, prompts, and totals.
+   - If the metadata is missing, an error is logged.
+
+3. **Content Construction:**
+   - `buildContent(result, finalData)` processes the response to extract relevant content from the API response (typically from the `candidates` field), and adds it to the `finalData.contents` array.
+   - It also adds a "finish reason" (if available) to the content items.
+
+4. **Streaming Response:**
+   - If the request is for streaming, the `streamingResponse` function is used to handle the streamed data in real-time.
+   - The response is read in chunks using a `TextDecoder`, and each chunk is processed as JSON. Each chunk is passed to the `streamingCallback` for handling as it arrives.
+   - Streaming continues until all data has been received.
+
+5. **Final Data Processing:**
+   - Once the streaming is complete (or if the request is non-streaming), the final data is processed:
+     - `finalData` is populated with content and token usage metadata.
+     - If an error occurred, error data is processed instead.
+
+6. **Making the Request:**
+   - The function makes a `fetch` request to the API endpoint, either for generating content normally or for streaming.
+   - The request uses the `POST` method and includes the `requestBody` in the payload as JSON.
+   - If the request is for streaming, it is processed through `streamingResponse`.
+
+7. **Error Handling:**
+   - There is comprehensive error handling throughout, including:
+     - If the API response is invalid or contains errors.
+     - If the request fails (either in streaming or non-streaming cases).
+     - Specific messages are logged for debugging.
+
+### Summary:
+
+- The `genContent` function is a wrapper for generating content through an external API.
+- The function checks if the necessary API function (`#_genContentApi`) is available, then calls it to initiate the content generation process.
+- It handles both normal and streaming content generation, processing API responses and building the final data accordingly.
+- The `streamingCallback` allows real-time handling of streamed content as it arrives.
+
+---
+
 ### `getData(id)`
 
 This method retrieves the stored data for a specific session ID. If no `id` is passed, it uses the currently selected session ID.

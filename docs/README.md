@@ -19,8 +19,6 @@ This documentation is designed to provide all the information you need to get up
 - [Configs](./configs.md) - Session configuration settings and management.
 - [Content](./content.md) - Manage session content, including prompts, dialogues, and files.
 - [Custom](./custom.md) - Working with custom values and user-specific configurations.
-- [Dev](./dev.md) - Development tools and utilities for advanced users.
-- [Models](./models.md) - Model configuration and setup.
 
 ---
 

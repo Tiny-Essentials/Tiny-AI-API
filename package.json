@@ -19,14 +19,6 @@
       "require": "./dist/TinyAiInstance2.cjs",
       "import": "./dist/TinyAiInstance2.mjs"
     },
-    "./services/Google": {
-      "require": "./dist/services/Google.cjs",
-      "import": "./dist/services/Google.mjs"
-    },
-    "./services/OpenAiCompatible": {
-      "require": "./dist/services/OpenAiCompatible.cjs",
-      "import": "./dist/services/OpenAiCompatible.mjs"
-    },
     "./services/legacy/Google": {
       "require": "./dist/services/legacy/Google.cjs",
       "import": "./dist/services/legacy/Google.mjs"
@@ -44,6 +36,8 @@
   "author": "Yasmin Seidel (JasminDreasond)",
   "license": "AGPL-3.0-only",
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.48",
+    "ai": "^6.0.193",
     "js-base64": "^3.7.8",
     "jsonrepair": "^3.12.0",
     "object-hash": "^3.0.0"

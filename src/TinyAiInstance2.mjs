@@ -20,52 +20,6 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  */
 
 /**
- * @typedef {Object} ModelInput - The model to insert.
- * @property {*} _response - The raw response.
- * @property {number} index - The index position.
- * @property {string} id - The unique identifier for the model.
- * @property {string} [name] - The name of the model.
- * @property {string} [displayName] - The display name of the model.
- * @property {string} [version] - The version of the model.
- * @property {string} [description] - A description of the model.
- * @property {number} [inputTokenLimit] - The input token limit for the model.
- * @property {number} [outputTokenLimit] - The output token limit for the model.
- * @property {number} [temperature] - The temperature setting for the model.
- * @property {number} [topP] - The top P setting for the model.
- * @property {number} [topK] - The top K setting for the model.
- * @property {Array<string>} [supportedGenerationMethods] - The generation methods supported by the model.
- * @property {Object} [category] - The category of the model.
- * @property {string} category.id - The unique identifier for the category.
- * @property {string} category.displayName - The display name of the category.
- * @property {number} category.index - The index of the category.
- */
-
-/**
- * @typedef {Object} AIToolFunction
- * @property {string} name - The name of the function to be called.
- * @property {string} [description] - A description of what the function does, used by the model to choose when and how to call the function.
- * @property {Record<string, any>} [parameters] - The parameters the functions accepts, described as a JSON Schema object.
- * @property {boolean} [strict] - Whether to enable strict schema adherence when generating the function call.
- */
-
-/**
- * @typedef {Object} AITool
- * @property {string} type - The type of the tool. Currently, only 'function' is supported.
- * @property {AIToolFunction} function - The function definition.
- */
-
-/**
- * @typedef {Object} AIToolChoiceFunction
- * @property {string} name - The name of the function to call.
- */
-
-/**
- * @typedef {Object} AIToolChoice
- * @property {string} type - The type of the tool. Currently, only 'function' is supported.
- * @property {AIToolChoiceFunction} function - The specific function to call.
- */
-
-/**
  * @typedef {Object} SessionDataContent
  * @property {AIContentData[]} data - Array of content data entries in the session.
  * @property {number[]} ids - Array of unique IDs corresponding to the content data.
@@ -77,39 +31,12 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * @property {string|string[]|null} stop - Stop sequences for generation.
  * @property {number|null} repeatPenalty - Penalty applied to repeated tokens.
  * @property {Record<string, number>|null} logitBias - Logit bias applied to specific tokens.
- * @property {number|null} seed - Random seed for reproducible results.
- * @property {AITool[]|null} tools - List of available tools for the AI.
- * @property {string|AIToolChoice|null} toolChoice - Controls which (if any) tool is called by the model (e.g., 'auto', 'none', 'required', or a specific tool object).
  */
 
 /**
  * @typedef {Record<string, any> & SessionDataContent} SessionData
  */
 
-/**
- * @typedef {Object} AiModel
- * @property {any} _response - The raw response object from the API.
- * @property {number} index - The index position of the model.
- * @property {string|null} name - The name of the model.
- * @property {string|null} id - The unique identifier for the model.
- * @property {string|null} displayName - The user-friendly display name.
- * @property {string|null} version - The model version.
- * @property {string|null} description - A brief description of the model.
- * @property {number|null} inputTokenLimit - Maximum input tokens allowed.
- * @property {number|null} outputTokenLimit - Maximum output tokens allowed.
- * @property {number|null} temperature - Sampling temperature.
- * @property {number|null} topP - Nucleus sampling parameter.
- * @property {number|null} topK - Top-K sampling parameter.
- * @property {string[]} [supportedGenerationMethods] - Methods the model supports (e.g., 'text', 'vision').
- */
-
-/**
- * @typedef {Object} AiCategory
- * @property {string} category - The category identifier.
- * @property {string} displayName - The display name of the category.
- * @property {number} index - The index position of the category.
- * @property {AiModel[]} data - Array of models belonging to this category.
- */
 
 /**
  * @typedef {{ type: 'text', text: string }} AIContentTextInput
@@ -126,8 +53,12 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
 /**
  * @typedef {Object} AIToolCall
  * @property {string} id - Unique ID for the tool call.
- * @property {string} type - The type of the tool call (e.g., 'function').
- * @property {{ name: string, arguments: string }} function - Details about the function to be called.
+ * @property {string} type - The type of the tool call (e.g., 'function', 'custom_tool_call', 'tool_search_call').
+ * @property {string} [call_id] - A specific reference call identifier for handling results.
+ * @property {string} [name] - The name of the tool called.
+ * @property {{ name: string, arguments: string }} [function] - Details about the standard function to be called.
+ * @property {string} [input] - Plain text input generated for custom tools.
+ * @property {string} [status] - The execution status, primarily used for custom or deferred tool calls.
  */
 
 /**
@@ -136,7 +67,7 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * @property {string} role - The role of the message ('user', 'assistant', 'system', 'tool').
  * @property {string|number|undefined} [finishReason] - The reason the generation stopped.
  * @property {AIToolCall[]} [tool_calls] - Array of tool calls requested by the model.
- * @property {string} [tool_call_id] - The ID of a specific tool call (used when role is 'tool').
+ * @property {string} [tool_call_id] - The ID of a specific tool call (used when role is 'tool' for function outputs).
  * @property {string} [name] - The name of the content/message or function.
  */
 
@@ -162,224 +93,9 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * **Note**: This script does not automatically track token count natively since
  * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
  */
-class TinyAiInstance2 {
-  /**
-   * Important instance used to make event emitter.
-   * @type {EventEmitter}
-   */
-  #events = new EventEmitter();
-
-  /**
-   * Important instance used to make system event emitter.
-   * @type {EventEmitter}
-   */
-  #sysEvents = new EventEmitter();
-  #sysEventsUsed = false;
-
-  /**
-   * Emits an event with optional arguments to all system emit.
-   * @param {string | symbol} event - The name of the event to emit.
-   * @param {...any} args - Arguments passed to event listeners.
-   */
-  #emit(event, ...args) {
-    this.#events.emit(event, ...args);
-    if (this.#sysEventsUsed) this.#sysEvents.emit(event, ...args);
-  }
-
-  /**
-   * Provides access to a secure internal EventEmitter for subclass use only.
-   *
-   * This method exposes a dedicated EventEmitter instance intended specifically for subclasses
-   * that extend the main class. It prevents subclasses from accidentally or intentionally using
-   * the primary class's public event system (`emit`), which could lead to unpredictable behavior
-   * or interference in the base class's event flow.
-   *
-   * For security and consistency, this method is designed to be accessed only once.
-   * Multiple accesses are blocked to avoid leaks or misuse of the internal event bus.
-   *
-   * @returns {EventEmitter} A special internal EventEmitter instance for subclass use.
-   * @throws {Error} If the method is called more than once.
-   */
-  getSysEvents() {
-    if (this.#sysEventsUsed)
-      throw new Error(
-        'Access denied: getSysEvents() can only be called once. ' +
-          'This restriction ensures subclass event isolation and prevents accidental interference ' +
-          'with the main class event emitter.',
-      );
-    this.#sysEventsUsed = true;
-    return this.#sysEvents;
-  }
-
-  /**
-   * @typedef {(...args: any[]) => void} ListenerCallback
-   * A generic callback function used for event listeners.
-   */
-
-  /**
-   * Sets the maximum number of listeners for the internal event emitter.
-   *
-   * @param {number} max - The maximum number of listeners allowed.
-   */
-  setMaxListeners(max) {
-    this.#events.setMaxListeners(max);
-  }
-
-  /**
-   * Emits an event with optional arguments.
-   * @param {string | symbol} event - The name of the event to emit.
-   * @param {...any} args - Arguments passed to event listeners.
-   * @returns {boolean} `true` if the event had listeners, `false` otherwise.
-   */
-  emit(event, ...args) {
-    return this.#events.emit(event, ...args);
-  }
-
-  /**
-   * Registers a listener for the specified event.
-   * @param {string | symbol} event - The name of the event to listen for.
-   * @param {ListenerCallback} listener - The callback function to invoke.
-   * @returns {this} The current class instance (for chaining).
-   */
-  on(event, listener) {
-    this.#events.on(event, listener);
-    return this;
-  }
-
-  /**
-   * Registers a one-time listener for the specified event.
-   * @param {string | symbol} event - The name of the event to listen for once.
-   * @param {ListenerCallback} listener - The callback function to invoke.
-   * @returns {this} The current class instance (for chaining).
-   */
-  once(event, listener) {
-    this.#events.once(event, listener);
-    return this;
-  }
-
-  /**
-   * Removes a listener from the specified event.
-   * @param {string | symbol} event - The name of the event.
-   * @param {ListenerCallback} listener - The listener to remove.
-   * @returns {this} The current class instance (for chaining).
-   */
-  off(event, listener) {
-    this.#events.off(event, listener);
-    return this;
-  }
-
-  /**
-   * Alias for `on`.
-   * @param {string | symbol} event - The name of the event.
-   * @param {ListenerCallback} listener - The callback to register.
-   * @returns {this} The current class instance (for chaining).
-   */
-  addListener(event, listener) {
-    this.#events.addListener(event, listener);
-    return this;
-  }
-
-  /**
-   * Alias for `off`.
-   * @param {string | symbol} event - The name of the event.
-   * @param {ListenerCallback} listener - The listener to remove.
-   * @returns {this} The current class instance (for chaining).
-   */
-  removeListener(event, listener) {
-    this.#events.removeListener(event, listener);
-    return this;
-  }
-
-  /**
-   * Removes all listeners for a specific event, or all events if no event is specified.
-   * @param {string | symbol} [event] - The name of the event. If omitted, all listeners from all events will be removed.
-   * @returns {this} The current class instance (for chaining).
-   */
-  removeAllListeners(event) {
-    this.#events.removeAllListeners(event);
-    return this;
-  }
-
-  /**
-   * Returns the number of times the given `listener` is registered for the specified `event`.
-   * If no `listener` is passed, returns how many listeners are registered for the `event`.
-   * @param {string | symbol} eventName - The name of the event.
-   * @param {Function} [listener] - Optional listener function to count.
-   * @returns {number} Number of matching listeners.
-   */
-  listenerCount(eventName, listener) {
-    return this.#events.listenerCount(eventName, listener);
-  }
-
-  /**
-   * Adds a listener function to the **beginning** of the listeners array for the specified event.
-   * The listener is called every time the event is emitted.
-   * @param {string | symbol} eventName - The event name.
-   * @param {ListenerCallback} listener - The callback function.
-   * @returns {this} The current class instance (for chaining).
-   */
-  prependListener(eventName, listener) {
-    this.#events.prependListener(eventName, listener);
-    return this;
-  }
-
-  /**
-   * Adds a **one-time** listener function to the **beginning** of the listeners array.
-   * The next time the event is triggered, this listener is removed and then invoked.
-   * @param {string | symbol} eventName - The event name.
-   * @param {ListenerCallback} listener - The callback function.
-   * @returns {this} The current class instance (for chaining).
-   */
-  prependOnceListener(eventName, listener) {
-    this.#events.prependOnceListener(eventName, listener);
-    return this;
-  }
-
-  /**
-   * Returns an array of event names for which listeners are currently registered.
-   * @returns {(string | symbol)[]} Array of event names.
-   */
-  eventNames() {
-    return this.#events.eventNames();
-  }
-
-  /**
-   * Gets the current maximum number of listeners allowed for any single event.
-   * @returns {number} The max listener count.
-   */
-  getMaxListeners() {
-    return this.#events.getMaxListeners();
-  }
-
-  /**
-   * Returns a copy of the listeners array for the specified event.
-   * @param {string | symbol} eventName - The event name.
-   * @returns {Function[]} An array of listener functions.
-   */
-  listeners(eventName) {
-    return this.#events.listeners(eventName);
-  }
-
-  /**
-   * Returns a copy of the internal listeners array for the specified event,
-   * including wrapper functions like those used by `.once()`.
-   * @param {string | symbol} eventName - The event name.
-   * @returns {Function[]} An array of raw listener functions.
-   */
-  rawListeners(eventName) {
-    return this.#events.rawListeners(eventName);
-  }
-
-  /** @type {string|null} */ #_apiKey = null;
-  /** @type {function|null} */ #_getModels = null;
-  /** @type {function|null} */ #_countTokens = null;
-  /** @type {function|null} */ #_genContentApi = null;
+class TinyAiInstance2 extends EventEmitter {
   /** @type {string|null} */ #_selectedHistory = null;
-  /** @type {function} */ #_insertIntoHistory = () => {};
-  /** @type {Record<string|number, string|{ text: string, hide?: boolean }>} */ _errorCode = {};
-  /** @type {string|null} */ _nextModelsPageToken = null;
 
-  /** @type {(AiModel|AiCategory)[]} */ models = [];
   /** @type {Object.<string, SessionData>} */ history = {};
   _isSingle = false;
 
@@ -409,23 +125,8 @@ class TinyAiInstance2 {
    * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
    */
   constructor(isSingle = false) {
+    super();
     this._isSingle = isSingle;
-
-    /**
-     * Updates an existing entry in the session history.
-     * @param {string} id - The session identifier.
-     * @param {HistoryUpdateData} data - Data fields to update within the session.
-     * @returns {boolean} True if the update succeeded, false otherwise.
-     */
-    this.#_insertIntoHistory = function (id, data) {
-      if (typeof id === 'string' && this.history[id]) {
-        for (const where in data) {
-          this.history[id][where] = data[where];
-        }
-        return true;
-      }
-      return false;
-    };
 
     // Is single instance
     if (this._isSingle) {
@@ -440,6 +141,22 @@ class TinyAiInstance2 {
         throw new Error('selectDataId disabled in the single instance mode!');
       };
     }
+  }
+
+  /**
+   * Updates an existing entry in the session history.
+   * @param {string|null} id - The session identifier.
+   * @param {HistoryUpdateData} data - Data fields to update within the session.
+   * @returns {boolean} True if the update succeeded, false otherwise.
+   */
+  #_insertIntoHistory(id, data) {
+    if (typeof id === 'string' && this.history[id]) {
+      for (const where in data) {
+        this.history[id][where] = data[where];
+      }
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -495,7 +212,7 @@ class TinyAiInstance2 {
         }
 
         // Complete
-        this.#emit(`set${this.#capitalizeFirstLetter(name)}`, value, selectedId);
+        this.emit(`set${this.#capitalizeFirstLetter(name)}`, value, selectedId);
         return;
       }
     }
@@ -537,7 +254,7 @@ class TinyAiInstance2 {
             delete this.history[selectedId].hash[name];
 
           // Complete
-          this.#emit(`set${this.#capitalizeFirstLetter(name)}`, null, selectedId);
+          this.emit(`set${this.#capitalizeFirstLetter(name)}`, null, selectedId);
           return;
         }
       }
@@ -590,34 +307,6 @@ class TinyAiInstance2 {
   }
 
   /**
-   * Set the maximum output tokens setting for an AI session.
-   *
-   * @param {number} value - The maximum number of output tokens to be set.
-   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {void} This function does not return a value.
-   */
-  setMaxOutputTokens(value, id) {
-    if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { maxOutputTokens: value });
-      this.#emit('setMaxOutputTokens', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid number value!');
-  }
-
-  /**
-   * Get the maximum output tokens setting for an AI session.
-   *
-   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {number | null} The maximum output tokens value, or null if not set.
-   */
-  getMaxOutputTokens(id) {
-    const history = this.getData(id);
-    return history && typeof history.maxOutputTokens === 'number' ? history.maxOutputTokens : null;
-  }
-
-  /**
    * Set the AI temperature setting for a session.
    *
    * @param {number} value - The temperature value to be set.
@@ -628,7 +317,7 @@ class TinyAiInstance2 {
     if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
       const selectedId = this.getId(id);
       this.#_insertIntoHistory(selectedId, { temperature: value });
-      this.#emit('setTemperature', value, selectedId);
+      this.emit('setTemperature', value, selectedId);
       return;
     }
     throw new Error('Invalid number value!');
@@ -656,7 +345,7 @@ class TinyAiInstance2 {
     if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
       const selectedId = this.getId(id);
       this.#_insertIntoHistory(selectedId, { topP: value });
-      this.#emit('setTopP', value, selectedId);
+      this.emit('setTopP', value, selectedId);
       return;
     }
     throw new Error('Invalid number value!');
@@ -684,7 +373,7 @@ class TinyAiInstance2 {
     if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
       const selectedId = this.getId(id);
       this.#_insertIntoHistory(selectedId, { topK: value });
-      this.#emit('setTopK', value, selectedId);
+      this.emit('setTopK', value, selectedId);
       return;
     }
     throw new Error('Invalid number value!');
@@ -712,7 +401,7 @@ class TinyAiInstance2 {
     if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
       const selectedId = this.getId(id);
       this.#_insertIntoHistory(selectedId, { presencePenalty: value });
-      this.#emit('setPresencePenalty', value, selectedId);
+      this.emit('setPresencePenalty', value, selectedId);
       return;
     }
     throw new Error('Invalid number value!');
@@ -740,7 +429,7 @@ class TinyAiInstance2 {
     if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
       const selectedId = this.getId(id);
       this.#_insertIntoHistory(selectedId, { frequencyPenalty: value });
-      this.#emit('setFrequencyPenalty', value, selectedId);
+      this.emit('setFrequencyPenalty', value, selectedId);
       return;
     }
     throw new Error('Invalid number value!');
@@ -770,7 +459,7 @@ class TinyAiInstance2 {
     if (typeof value === 'string' || Array.isArray(value) || value === null) {
       const selectedId = this.getId(id);
       this.#_insertIntoHistory(selectedId, { stop: value });
-      this.#emit('setStop', value, selectedId);
+      this.emit('setStop', value, selectedId);
       return;
     }
     throw new Error('Invalid stop value. Must be a string, array, or null!');
@@ -798,7 +487,7 @@ class TinyAiInstance2 {
     if (isJsonObject(value) || value === null) {
       const selectedId = this.getId(id);
       this.#_insertIntoHistory(selectedId, { logitBias: value });
-      this.#emit('setLogitBias', value, selectedId);
+      this.emit('setLogitBias', value, selectedId);
       return;
     }
     throw new Error('Invalid logitBias value. Must be an object or null!');
@@ -826,7 +515,7 @@ class TinyAiInstance2 {
     if ((typeof value === 'number' && !Number.isNaN(value)) || value === null) {
       const selectedId = this.getId(id);
       this.#_insertIntoHistory(selectedId, { repeatPenalty: value });
-      this.#emit('setRepeatPenalty', value, selectedId);
+      this.emit('setRepeatPenalty', value, selectedId);
       return;
     }
     throw new Error('Invalid repeatPenalty value!');
@@ -844,90 +533,6 @@ class TinyAiInstance2 {
   }
 
   /**
-   * Set the random seed for an AI session.
-   *
-   * @param {number|null} value - The seed value.
-   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {void} This function does not return a value.
-   */
-  setSeed(value, id) {
-    if ((typeof value === 'number' && !Number.isNaN(value)) || value === null) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { seed: value });
-      this.#emit('setSeed', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid seed value!');
-  }
-
-  /**
-   * Get the random seed for an AI session.
-   *
-   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {number | null} The seed value, or null if not set.
-   */
-  getSeed(id) {
-    const history = this.getData(id);
-    return history && typeof history.seed === 'number' ? history.seed : null;
-  }
-
-  /**
-   * Set the list of available tools for the AI session.
-   *
-   * @param {AITool[]|null} value - The array of tool definitions.
-   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {void} This function does not return a value.
-   */
-  setTools(value, id) {
-    if (Array.isArray(value) || value === null) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { tools: value });
-      this.#emit('setTools', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid tools value. Must be an array or null!');
-  }
-
-  /**
-   * Get the list of available tools for an AI session.
-   *
-   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {AITool[]|null} The list of tools, or null if not set.
-   */
-  getTools(id) {
-    const history = this.getData(id);
-    return history && Array.isArray(history.tools) ? history.tools : null;
-  }
-
-  /**
-   * Set the tool choice for the AI session.
-   *
-   * @param {string|AIToolChoice|null} value - The chosen tool or tool configuration (e.g. 'auto', 'none', 'required', or a specific function object).
-   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {void} This function does not return a value.
-   */
-  setToolChoice(value, id) {
-    if (typeof value === 'string' || isJsonObject(value) || value === null) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { toolChoice: value });
-      this.#emit('setToolChoice', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid toolChoice value!');
-  }
-
-  /**
-   * Get the tool choice for an AI session.
-   *
-   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
-   * @returns {string|AIToolChoice|null} The chosen tool choice, or null if not set.
-   */
-  getToolChoice(id) {
-    const history = this.getData(id);
-    return history && typeof history.toolChoice !== 'undefined' ? history.toolChoice : null;
-  }
-
-  /**
    * Set the model for an AI session.
    *
    * @param {string} data - The model identifier to be set.
@@ -938,7 +543,7 @@ class TinyAiInstance2 {
     const model = typeof data === 'string' ? data : null;
     const selectedId = this.getId(id);
     this.#_insertIntoHistory(selectedId, { model });
-    this.#emit('setModel', model, selectedId);
+    this.emit('setModel', model, selectedId);
   }
 
   /**
@@ -953,247 +558,6 @@ class TinyAiInstance2 {
   }
 
   /**
-   * Set the API key for the AI session.
-   *
-   * @param {string} apiKey - The API key to be set.
-   * @returns {void} This function does not return a value.
-   */
-  setApiKey(apiKey) {
-    this.#_apiKey = typeof apiKey === 'string' ? apiKey : null;
-  }
-
-  /**
-   * Sets the token for the next page of models in the AI session.
-   * @param {string} nextModelsPageToken - The token for the next models page.
-   * @returns {void}
-   */
-  _setNextModelsPageToken(nextModelsPageToken) {
-    this._nextModelsPageToken =
-      typeof nextModelsPageToken === 'string' ? nextModelsPageToken : null;
-  }
-
-  /**
-   * Sets the function to retrieve models for the AI session.
-   * @param {function(string, number, string|null): Promise<{ newData: AiModel[]; _response: any; }>} getModels - The function to retrieve models.
-   * @returns {void}
-   */
-  _setGetModels(getModels) {
-    this.#_getModels = typeof getModels === 'function' ? getModels : null;
-  }
-
-  /**
-   * Get a list of models for the AI session.
-   *
-   * @param {number} [pageSize=50] - The number of models to retrieve per page. Defaults to 50.
-   * @param {string|null} [pageToken=null] - The token for the next page of models, if available. Defaults to null.
-   * @returns {Array<AiModel|AiCategory>} The list of models retrieved.
-   * @throws {Error} If no model list API function is defined.
-   */
-  getModels(pageSize = 50, pageToken = null) {
-    if (typeof this.#_getModels === 'function')
-      return this.#_getModels(this.#_apiKey, pageSize, pageToken || this._nextModelsPageToken);
-    throw new Error('No model list api script defined.');
-  }
-
-  /**
-   * Get the list of models for the AI session.
-   *
-   * @returns {(AiModel|AiCategory)[]} The list of models.
-   */
-  getModelsList() {
-    return Array.isArray(this.models) ? this.models : [];
-  }
-
-  /**
-   * Get model data from the list of models.
-   *
-   * @param {string} id - The model data id to search for in the models list.
-   * @returns {AiModel|null} The model data if found, otherwise null.
-   */
-  getModelData(id) {
-    // @ts-ignore
-    const model = this.models.find((item) => item.id === id);
-    // @ts-ignore
-    if (model) return model;
-    for (const index in this.models) {
-      // @ts-ignore
-      if (this.models[index].category) {
-        // @ts-ignore
-        const modelCategory = this.models[index].data.find((item) => item.id === id);
-        if (modelCategory) return modelCategory;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Check if a model exists in the model list.
-   *
-   * @param {string} id - The model id to check for in the models list.
-   * @returns {boolean} True if the model exists, false otherwise.
-   */
-  existsModel(id) {
-    return this.getModelData(id) ? true : false;
-  }
-
-  /**
-   * Inserts a new model into the AI session's models list.
-   * If the model already exists, it will not be inserted again.
-   *
-   * @param {ModelInput} model - The model to insert.
-   * @returns {AiModel|null} The inserted model data, or null if the model already exists.
-   */
-  _insertNewModel(model) {
-    if (!isJsonObject(model)) throw new Error('Model data must be a valid object.');
-    // @ts-ignore
-    if (this.models.findIndex((item) => item.id === model.id) < 0) {
-      /** @type {AiModel} */
-      const newData = {
-        _response: model._response,
-        index: typeof model.index === 'number' ? model.index : 9999999,
-        name: typeof model.name === 'string' ? model.name : null,
-        id: typeof model.id === 'string' ? model.id : null,
-        displayName: typeof model.displayName === 'string' ? model.displayName : null,
-        version: typeof model.version === 'string' ? model.version : null,
-        description: typeof model.description === 'string' ? model.description : null,
-        inputTokenLimit: typeof model.inputTokenLimit === 'number' ? model.inputTokenLimit : null,
-        outputTokenLimit:
-          typeof model.outputTokenLimit === 'number' ? model.outputTokenLimit : null,
-        temperature: typeof model.temperature === 'number' ? model.temperature : null,
-        topP: typeof model.topP === 'number' ? model.topP : null,
-        topK: typeof model.topK === 'number' ? model.topK : null,
-      };
-
-      // Supported generation methods
-      if (Array.isArray(model.supportedGenerationMethods)) {
-        newData.supportedGenerationMethods = [];
-        for (const method of model.supportedGenerationMethods) {
-          if (typeof method === 'string') newData.supportedGenerationMethods.push(method);
-        }
-      }
-
-      // Is category
-      if (
-        model.category &&
-        typeof model.category.id === 'string' &&
-        typeof model.category.displayName === 'string'
-      ) {
-        // Check category
-        /** @type {AiCategory|null} */
-        // @ts-ignore
-        let category = this.models.find((item) => item.category === model.category.id);
-        // Insert new category
-        if (!category) {
-          category = {
-            category: model.category.id,
-            displayName: model.category.displayName,
-            index: model.category.index || 0,
-            data: [],
-          };
-          this.models.push(category);
-        }
-
-        // Compare function that sorts objects by their `index` property.
-        category.data.push(newData);
-        category.data.sort((a, b) => a.index - b.index);
-      } else
-        // Normal mode
-        this.models.push(newData);
-
-      // Sort data
-      this.models.sort((a, b) => a.index - b.index);
-      return newData;
-    }
-    return null;
-  }
-
-  /**
-   * Sets the function to handle the count of tokens in the AI session.
-   * @param {function(string, string|null, AbortController|null, AIContentData[]): Promise<CountTokensResult>} countTokens - The function that will handle the token count.
-   * @returns {void}
-   */
-  _setCountTokens(countTokens) {
-    this.#_countTokens = typeof countTokens === 'function' ? countTokens : null;
-  }
-
-  /**
-   * Counts the tokens based on the provided data and model, using a defined token counting function.
-   *
-   * @param {Record<string, any>} data - The data that needs to be tokenized.
-   * @param {string} [model] - The model to use for counting tokens. If not provided, the default model is used.
-   * @param {AbortController} [controller] - The controller that manages the process or settings for counting tokens.
-   * @returns {Record<string, any>} The count of tokens.
-   * @throws {Error} Throws an error if no token counting function is defined.
-   */
-  countTokens(data, model, controller) {
-    if (typeof this.#_countTokens === 'function')
-      return this.#_countTokens(this.#_apiKey, model || this.getModel(), controller, data);
-    throw new Error('No count token api script defined.');
-  }
-
-  /**
-   * @typedef {{ text: string, hide?: boolean }} ErrorCode
-   */
-
-  /**
-   * Sets the error codes for the current session.
-   * @param {Record<string|number, string|ErrorCode>} errors - The error codes to set, typically an object containing error code definitions.
-   * @returns {void}
-   */
-  _setErrorCodes(errors) {
-    this._errorCode = errors;
-  }
-
-  /**
-   * Get error details based on the provided error code.
-   *
-   * @param {string|number} code - The error code to look up.
-   * @returns {ErrorCode|null} An object containing the error message, or null if no error is found.
-   */
-  getErrorCode(code) {
-    if (this._errorCode) {
-      const errData = this._errorCode[code];
-      if (errData) {
-        if (typeof errData === 'string') return { text: errData };
-        else if (isJsonObject(errData) && typeof errData.text === 'string') return errData;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Sets the content generation callback function for the AI session.
-   * @param {function(string, boolean, AIContentData[], string|null, function, AbortController|null): Promise<Record<string, any>>} callback - The callback function that handles content generation.
-   * @returns {void}
-   */
-  _setGenContent(callback) {
-    this.#_genContentApi = typeof callback === 'function' ? callback : null;
-  }
-
-  /**
-   * Generates content for the AI session.
-   *
-   * @param {Record<string, any>} data - The data for content generation (messages, system instruction, etc.).
-   * @param {string} [model] - The model to be used for content generation. If not provided, the default model is used.
-   * @param {AbortController} [controller] - The controller managing the content generation process.
-   * @param {function(any, boolean, Record<string, any>, string|null, any, AbortController|null): void} [streamCallback] - The callback function for streaming content (optional).
-   * @returns {Record<string, any>} The generated content returned by the API.
-   * @throws {Error} If no content generator API script is defined.
-   */
-  genContent(data, model, controller, streamCallback) {
-    if (typeof this.#_genContentApi === 'function')
-      return this.#_genContentApi(
-        this.#_apiKey,
-        typeof streamCallback === 'function',
-        data,
-        model || this.getModel(),
-        streamCallback,
-        controller,
-      );
-    throw new Error('No content generator api script defined.');
-  }
-
-  /**
    * Select a session history ID to set as the active session.
    * If `null` is passed, it deselects the current session ID.
    *
@@ -1204,13 +568,13 @@ class TinyAiInstance2 {
     if (id !== null) {
       if (this.history[id]) {
         this.#_selectedHistory = id;
-        this.#emit('selectDataId', id);
+        this.emit('selectDataId', id);
         return true;
       }
       return false;
     }
     this.#_selectedHistory = null;
-    this.#emit('selectDataId', null);
+    this.emit('selectDataId', null);
     return true;
   }
 
@@ -1439,7 +803,7 @@ class TinyAiInstance2 {
       history.ids.splice(index, 1);
       history.hash.data.splice(index, 1);
       history.tokens.data.splice(index, 1);
-      this.#emit('deleteIndex', index, msgId, this.getId(id));
+      this.emit('deleteIndex', index, msgId, this.getId(id));
       return true;
     }
     return false;
@@ -1465,7 +829,7 @@ class TinyAiInstance2 {
       }
 
       if (tokens) history.tokens.data[index] = tokens;
-      this.#emit('replaceIndex', index, data, tokens, hash, this.getId(id));
+      this.emit('replaceIndex', index, data, tokens, hash, this.getId(id));
       return true;
     }
     return false;
@@ -1549,7 +913,7 @@ class TinyAiInstance2 {
       this.history[selectedId].ids.push(newId);
       this.history[selectedId].hash.data.push(hash);
 
-      this.#emit('addData', newId, data, tokenContent, hash, selectedId);
+      this.emit('addData', newId, data, tokenContent, hash, selectedId);
       return newId;
     }
     throw new Error('Invalid history id data!');
@@ -1573,7 +937,7 @@ class TinyAiInstance2 {
       }
 
       if (typeof tokenAmount === 'number') this.history[selectedId].tokens.prompt = tokenAmount;
-      this.#emit('setPrompt', promptData, selectedId);
+      this.emit('setPrompt', promptData, selectedId);
       return;
     }
     throw new Error('Invalid history id data!');
@@ -1618,7 +982,7 @@ class TinyAiInstance2 {
 
       if (typeof tokenAmount === 'number')
         this.history[selectedId].tokens.firstDialogue = tokenAmount;
-      this.#emit('setFirstDialogue', dialogue, selectedId);
+      this.emit('setFirstDialogue', dialogue, selectedId);
       return;
     }
     throw new Error('Invalid history id data!');
@@ -1663,7 +1027,7 @@ class TinyAiInstance2 {
 
       if (typeof tokenAmount === 'number')
         this.history[selectedId].tokens.systemInstruction = tokenAmount;
-      this.#emit('setSystemInstruction', data, selectedId);
+      this.emit('setSystemInstruction', data, selectedId);
       return;
     }
     throw new Error('Invalid history id data!');
@@ -1741,12 +1105,9 @@ class TinyAiInstance2 {
       stop: null,
       repeatPenalty: null,
       logitBias: null,
-      seed: null,
-      tools: null,
-      toolChoice: null,
     };
     if (selected) this.selectDataId(id);
-    this.#emit('startDataId', this.history[id], id, selected ? true : false);
+    this.emit('startDataId', this.history[id], id, selected ? true : false);
     return this.history[id];
   }
 
@@ -1761,7 +1122,7 @@ class TinyAiInstance2 {
     if (this.history[id]) {
       delete this.history[id];
       if (this.getId() === id) this.selectDataId(null);
-      this.#emit('stopDataId', id);
+      this.emit('stopDataId', id);
       return true;
     }
     return false;
@@ -1772,7 +1133,7 @@ class TinyAiInstance2 {
    *
    * This method resets the internal `history` object, effectively discarding any stored
    * data or state associated with the instance's operations. It also removes all listeners
-   * from both `#events` and `#sysEvents` to ensure no further event handling occurs and to
+   * from events to ensure no further event handling occurs and to
    * prevent memory leaks.
    *
    * This method should be called when the instance is no longer needed.
@@ -1780,9 +1141,9 @@ class TinyAiInstance2 {
    * @returns {void}
    */
   destroy() {
-    this.history = {};
-    this.#events.removeAllListeners();
-    this.#sysEvents.removeAllListeners();
+    if (!this._isSingle) for (const id in this.history) this.stopDataId(id);
+    else this.stopDataId('main');
+    this.removeAllListeners();
   }
 }
 
