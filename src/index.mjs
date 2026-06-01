@@ -1,4 +1,3 @@
-import TinyAiInstance from './TinyAiInstance.mjs';
 import TinyAiInstance2 from './TinyAiInstance2.mjs';
 
 import {
@@ -11,7 +10,6 @@ import {
 } from './tiny-modules/basics/objFilter.mjs';
 
 export {
-  TinyAiInstance,
   TinyAiInstance2,
   checkAiObj,
   cloneAiObjTypeOrder,

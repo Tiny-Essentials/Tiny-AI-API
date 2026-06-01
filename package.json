@@ -15,13 +15,13 @@
       "require": "./dist/TinyAiInstance.cjs",
       "import": "./dist/TinyAiInstance.mjs"
     },
-    "./TinyAiInstance2": {
-      "require": "./dist/TinyAiInstance2.cjs",
-      "import": "./dist/TinyAiInstance2.mjs"
-    },
     "./services/legacy/Google": {
       "require": "./dist/services/legacy/Google.cjs",
       "import": "./dist/services/legacy/Google.mjs"
+    },
+    "./TinyAiInstance2": {
+      "require": "./dist/TinyAiInstance2.cjs",
+      "import": "./dist/TinyAiInstance2.mjs"
     },
     "./utils/errorCodes": {
       "require": "./dist/utils/errorCodes.cjs",
