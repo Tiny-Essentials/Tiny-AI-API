@@ -4,7 +4,9 @@ import { encode as encodeBase64 } from 'js-base64';
 import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
 
 /**
- * @typedef {{ name: string, type: string }} CustomValueDefinition
+ * @typedef {Object} CustomValueDefinition
+ * @property {string} name - The name of the custom value.
+ * @property {string} type - The expected data type for the custom value.
  * Defines the name and expected data type for a custom value.
  */
 
@@ -12,11 +14,12 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * @typedef {Object} CustomValue
  * @property {string} name - The name of the custom value.
  * @property {*} value - The actual value of the custom value.
+ * Represents an active custom value assigned within the session.
  */
 
 /**
  * @typedef {Record<string, any>} HistoryUpdateData
- * The data fields to update within the session.
+ * The data fields to update within the session history dynamically.
  */
 
 /**
@@ -31,23 +34,33 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * @property {string|string[]|null} stop - Stop sequences for generation.
  * @property {number|null} repeatPenalty - Penalty applied to repeated tokens.
  * @property {Record<string, number>|null} logitBias - Logit bias applied to specific tokens.
+ * Core content structure holding all context for an active AI session.
  */
 
 /**
  * @typedef {Record<string, any> & SessionDataContent} SessionData
- */
-
-
-/**
- * @typedef {{ type: 'text', text: string }} AIContentTextInput
+ * Represents the complete session data, combining base content and dynamic fields.
  */
 
 /**
- * @typedef {{ type: 'image_url', image_url: { url?: string, data?: string } }} AIContentImageInput
+ * @typedef {Object} AIContentTextInput
+ * @property {'text'} type - The type of input.
+ * @property {string} text - The raw text content.
+ * Represents a text input structure for AI content.
+ */
+
+/**
+ * @typedef {Object} AIContentImageInput
+ * @property {'image_url'} type - The type of input.
+ * @property {Object} image_url - The object containing image data.
+ * @property {string} [image_url.url] - The data URI or URL of the image.
+ * @property {string} [image_url.data] - The raw base64 data of the image.
+ * Represents an image input structure for AI content.
  */
 
 /**
  * @typedef {string|[AIContentTextInput,...AIContentImageInput[]]} AIContentInput
+ * Represents the valid input types for AI content, which can be a string or a mix of text and image objects.
  */
 
 /**
@@ -56,31 +69,30 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * @property {string} type - The type of the tool call (e.g., 'function', 'custom_tool_call', 'tool_search_call').
  * @property {string} [call_id] - A specific reference call identifier for handling results.
  * @property {string} [name] - The name of the tool called.
- * @property {{ name: string, arguments: string }} [function] - Details about the standard function to be called.
+ * @property {Object} [function] - Details about the standard function to be called.
+ * @property {string} function.name - The target function name.
+ * @property {string} function.arguments - Stringified JSON arguments for the function.
  * @property {string} [input] - Plain text input generated for custom tools.
  * @property {string} [status] - The execution status, primarily used for custom or deferred tool calls.
+ * Represents a specific tool execution request made by the AI model.
  */
 
 /**
  * @typedef {Object} AIContentData
  * @property {AIContentInput} [content] - The input content (text or image).
  * @property {string} role - The role of the message ('user', 'assistant', 'system', 'tool').
- * @property {string|number|undefined} [finishReason] - The reason the generation stopped.
+ * @property {string|number} [finishReason] - The reason the generation stopped.
  * @property {AIToolCall[]} [tool_calls] - Array of tool calls requested by the model.
  * @property {string} [tool_call_id] - The ID of a specific tool call (used when role is 'tool' for function outputs).
  * @property {string} [name] - The name of the content/message or function.
+ * The standardized object format representing a single interaction or message in the AI session.
  */
 
 /**
- * @typedef {{ count: number|null, hide?: boolean }} TokenCount
- */
-
-/**
- * @typedef {Object} CountTokensResult
- * @property {any} _response
- * @property {number|null} totalTokens
- * @property {number|null} cachedContentTokenCount
- * @property {{ tokenCount: number|null, modality: string|null }} [promptTokensDetails]
+ * @typedef {Object} TokenCount
+ * @property {number|null} count - The amount of tokens.
+ * @property {boolean} [hide] - Whether this token count is hidden or ignored in global totals.
+ * Represents the token counting details for a specific content entry.
  */
 
 /**
@@ -109,6 +121,8 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {AIContentImageInput} The formatted image input object.
    */
   static imageToBase64(mime, data, isBase64 = false) {
+    if (typeof mime !== 'string' || typeof data !== 'string')
+      throw new TypeError('Invalid input! Mime and data must be strings.');
     return {
       type: 'image_url',
       image_url: {
@@ -119,8 +133,6 @@ class TinyAiInstance2 extends EventEmitter {
 
   /**
    * Creates an instance of the TinyAiInstance2 class.
-   * Initializes internal variables, sets up initial configurations for handling AI models,
-   * session history, and content generation, with the option to use a single or multiple instances.
    *
    * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
    */
@@ -132,13 +144,13 @@ class TinyAiInstance2 extends EventEmitter {
     if (this._isSingle) {
       this.startDataId('main', true);
       this.startDataId = () => {
-        throw new Error('startDataId disabled in the single instance mode!');
+        throw new Error('startDataId disabled in single instance mode!');
       };
       this.stopDataId = () => {
-        throw new Error('stopDataId disabled in the single instance mode!');
+        throw new Error('stopDataId disabled in single instance mode!');
       };
       this.selectDataId = () => {
-        throw new Error('selectDataId disabled in the single instance mode!');
+        throw new Error('selectDataId disabled in single instance mode!');
       };
     }
   }
@@ -165,7 +177,7 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {string} The string with the first character in uppercase.
    */
   #capitalizeFirstLetter(str) {
-    if (!str) return '';
+    if (!str || typeof str !== 'string') return '';
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
@@ -179,95 +191,83 @@ class TinyAiInstance2 extends EventEmitter {
    * @throws {Error} If the custom value name is invalid or conflicts with existing data.
    */
   setCustomValue(name, value, tokenAmount, id) {
-    if (typeof name === 'string' && name.length > 0 && name !== 'customList') {
-      // Prepare value to send
-      const sendValue = { [name]: value };
+    if (typeof name !== 'string' || name.length === 0 || name === 'customList')
+      throw new TypeError('Invalid custom value name!');
+    if (tokenAmount !== undefined && typeof tokenAmount !== 'number')
+      throw new TypeError('Invalid token amount! Must be a number.');
 
-      // This value is extremely important for the import process to identify which custom values are being used
-      const selectedId = this.getId(id);
-      if (selectedId && this.history[selectedId]) {
-        const history = this.history[selectedId];
-        if (!Array.isArray(history.customList)) history.customList = [];
+    // This value is extremely important for the import process to identify which custom values are being used
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
 
-        // Validate the custom value
-        if (value !== null) {
-          const props = history.customList.find((item) => item.name === name);
-          if (!props || typeof props.type !== 'string' || typeof props.name !== 'string') {
-            if (typeof history[name] === 'undefined')
-              history.customList.push({ name, type: objType(value)?.toString() ?? '' });
-            else throw new Error('This value name is already being used!');
-          } else if (props.type !== objType(value))
-            throw new Error(
-              `Invalid custom value type! ${name}: ${props.type} === ${objType(value)}`,
-            );
-        }
+    const history = this.history[selectedId];
+    if (!Array.isArray(history.customList)) history.customList = [];
 
-        // Add Tokens
-        if (typeof tokenAmount === 'number') this.history[selectedId].tokens[name] = tokenAmount;
-
-        // Send custom value into the history
-        if (value !== null) {
-          this.#_insertIntoHistory(selectedId, sendValue);
-          this.history[selectedId].hash[name] = objHash(value);
-        }
-
-        // Complete
-        this.emit(`set${this.#capitalizeFirstLetter(name)}`, value, selectedId);
-        return;
-      }
+    // Validate the custom value
+    if (value !== null) {
+      const props = history.customList.find((item) => item.name === name);
+      if (!props || typeof props.type !== 'string' || typeof props.name !== 'string') {
+        if (typeof history[name] === 'undefined') {
+          history.customList.push({ name, type: objType(value)?.toString() ?? '' });
+        } else throw new Error('This value name is already being used!');
+      } else if (props.type !== objType(value))
+        throw new Error(`Invalid custom value type! Expected ${props.type}, got ${objType(value)}`);
     }
-    throw new Error('Invalid custom value!');
+
+    // Add Tokens
+    if (typeof tokenAmount === 'number') this.history[selectedId].tokens[name] = tokenAmount;
+
+    // Send custom value into the history
+    if (value !== null) {
+      this.#_insertIntoHistory(selectedId, { [name]: value });
+      this.history[selectedId].hash[name] = objHash(value);
+    }
+
+    // Complete
+    this.emit(`set${this.#capitalizeFirstLetter(name)}`, value, selectedId);
   }
 
   /**
    * Resets a custom value in the selected session history.
    *
    * @param {string} name - The name of the custom value to reset.
-   * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
+   * @param {string} [id] - The session ID.
    * @throws {Error} If the custom value name is invalid or does not match an existing entry.
    */
   resetCustomValue(name, id) {
-    if (typeof name === 'string' && name.length > 0 && name !== 'customList') {
-      // Prepare value to send
-      const sendValue = { [name]: null };
+    if (typeof name !== 'string' || name.length === 0 || name === 'customList')
+      throw new TypeError('Invalid custom value name!');
 
-      // This value is extremely important for the import process to identify which custom values are being used
-      const selectedId = this.getId(id);
-      if (selectedId && this.history[selectedId]) {
-        const history = this.history[selectedId];
-        if (!Array.isArray(history.customList)) history.customList = [];
+    // This value is extremely important for the import process to identify which custom values are being used
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
 
-        // Validate the custom value
-        const props = history.customList.find((item) => item.name === name);
-        if (
-          isJsonObject(props) &&
-          typeof props.type === 'string' &&
-          typeof props.name === 'string'
-        ) {
-          // Reset Tokens
-          if (typeof this.history[selectedId].tokens[name] !== 'undefined')
-            delete this.history[selectedId].tokens[name];
+    const history = this.history[selectedId];
+    if (!Array.isArray(history.customList)) history.customList = [];
 
-          // Reset custom value
-          this.#_insertIntoHistory(selectedId, sendValue);
-          if (typeof this.history[selectedId].hash[name] !== 'undefined')
-            delete this.history[selectedId].hash[name];
+    // Validate the custom value
+    const props = history.customList.find((item) => item.name === name);
+    if (!isJsonObject(props) || typeof props.type !== 'string' || typeof props.name !== 'string')
+      throw new TypeError('Invalid custom value data type or custom value not found!');
 
-          // Complete
-          this.emit(`set${this.#capitalizeFirstLetter(name)}`, null, selectedId);
-          return;
-        }
-      }
-      throw new Error('Invalid custom value data type!');
-    }
-    throw new Error('Invalid custom value!');
+    // Reset Tokens
+    if (typeof this.history[selectedId].tokens[name] !== 'undefined')
+      delete this.history[selectedId].tokens[name];
+
+    // Reset custom value
+    this.#_insertIntoHistory(selectedId, { [name]: null });
+    if (typeof this.history[selectedId].hash[name] !== 'undefined')
+      delete this.history[selectedId].hash[name];
+
+    // Complete
+    this.emit(`set${this.#capitalizeFirstLetter(name)}`, null, selectedId);
   }
 
   /**
    * Completely removes a custom value from the selected session history.
    *
    * @param {string} name - The name of the custom value to erase.
-   * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
+   * @param {string} [id] - The session ID.
    * @throws {Error} If the custom value name is invalid or does not exist.
    */
   eraseCustomValue(name, id) {
@@ -278,7 +278,7 @@ class TinyAiInstance2 extends EventEmitter {
       if (index > -1) history.customList.splice(index, 1);
       return;
     }
-    throw new Error('Invalid custom value!');
+    throw new Error('Failed to erase custom value: History not found!');
   }
 
   /**
@@ -314,13 +314,14 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void} This function does not return a value.
    */
   setTemperature(value, id) {
-    if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { temperature: value });
-      this.emit('setTemperature', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid number value!');
+    if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value))
+      throw new TypeError('Invalid temperature value! Must be a valid finite number.');
+
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    this.#_insertIntoHistory(selectedId, { temperature: value });
+    this.emit('setTemperature', value, selectedId);
   }
 
   /**
@@ -342,13 +343,14 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void} This function does not return a value.
    */
   setTopP(value, id) {
-    if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { topP: value });
-      this.emit('setTopP', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid number value!');
+    if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value))
+      throw new TypeError('Invalid topP value! Must be a valid finite number.');
+
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    this.#_insertIntoHistory(selectedId, { topP: value });
+    this.emit('setTopP', value, selectedId);
   }
 
   /**
@@ -370,13 +372,14 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void} This function does not return a value.
    */
   setTopK(value, id) {
-    if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { topK: value });
-      this.emit('setTopK', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid number value!');
+    if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value))
+      throw new TypeError('Invalid topK value! Must be a valid finite number.');
+
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    this.#_insertIntoHistory(selectedId, { topK: value });
+    this.emit('setTopK', value, selectedId);
   }
 
   /**
@@ -398,13 +401,14 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void} This function does not return a value.
    */
   setPresencePenalty(value, id) {
-    if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { presencePenalty: value });
-      this.emit('setPresencePenalty', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid number value!');
+    if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value))
+      throw new TypeError('Invalid presencePenalty value! Must be a valid finite number.');
+
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    this.#_insertIntoHistory(selectedId, { presencePenalty: value });
+    this.emit('setPresencePenalty', value, selectedId);
   }
 
   /**
@@ -426,13 +430,14 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void} This function does not return a value.
    */
   setFrequencyPenalty(value, id) {
-    if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { frequencyPenalty: value });
-      this.emit('setFrequencyPenalty', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid number value!');
+    if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value))
+      throw new TypeError('Invalid frequencyPenalty value! Must be a valid finite number.');
+
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    this.#_insertIntoHistory(selectedId, { frequencyPenalty: value });
+    this.emit('setFrequencyPenalty', value, selectedId);
   }
 
   /**
@@ -456,13 +461,14 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void} This function does not return a value.
    */
   setStop(value, id) {
-    if (typeof value === 'string' || Array.isArray(value) || value === null) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { stop: value });
-      this.emit('setStop', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid stop value. Must be a string, array, or null!');
+    if (typeof value !== 'string' && !Array.isArray(value) && value !== null)
+      throw new TypeError('Invalid stop value. Must be a string, array, or null!');
+
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    this.#_insertIntoHistory(selectedId, { stop: value });
+    this.emit('setStop', value, selectedId);
   }
 
   /**
@@ -484,13 +490,14 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void} This function does not return a value.
    */
   setLogitBias(value, id) {
-    if (isJsonObject(value) || value === null) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { logitBias: value });
-      this.emit('setLogitBias', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid logitBias value. Must be an object or null!');
+    if (!isJsonObject(value) && value !== null)
+      throw new TypeError('Invalid logitBias value. Must be a JSON object or null!');
+
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    this.#_insertIntoHistory(selectedId, { logitBias: value });
+    this.emit('setLogitBias', value, selectedId);
   }
 
   /**
@@ -512,13 +519,14 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void} This function does not return a value.
    */
   setRepeatPenalty(value, id) {
-    if ((typeof value === 'number' && !Number.isNaN(value)) || value === null) {
-      const selectedId = this.getId(id);
-      this.#_insertIntoHistory(selectedId, { repeatPenalty: value });
-      this.emit('setRepeatPenalty', value, selectedId);
-      return;
-    }
-    throw new Error('Invalid repeatPenalty value!');
+    if ((typeof value !== 'number' || Number.isNaN(value)) && value !== null)
+      throw new TypeError('Invalid repeatPenalty value! Must be a valid number or null.');
+
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    this.#_insertIntoHistory(selectedId, { repeatPenalty: value });
+    this.emit('setRepeatPenalty', value, selectedId);
   }
 
   /**
@@ -540,10 +548,14 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void} This function does not return a value.
    */
   setModel(data, id) {
-    const model = typeof data === 'string' ? data : null;
+    if (typeof data !== 'string' && data !== null)
+      throw new TypeError('Invalid model data type! Must be a string or null.');
+
     const selectedId = this.getId(id);
-    this.#_insertIntoHistory(selectedId, { model });
-    this.emit('setModel', model, selectedId);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    this.#_insertIntoHistory(selectedId, { model: data });
+    this.emit('setModel', data, selectedId);
   }
 
   /**
@@ -566,6 +578,8 @@ class TinyAiInstance2 extends EventEmitter {
    */
   selectDataId(id) {
     if (id !== null) {
+      if (typeof id !== 'string')
+        throw new TypeError('Invalid select ID! Must be a string or null.');
       if (this.history[id]) {
         this.#_selectedHistory = id;
         this.emit('selectDataId', id);
@@ -897,26 +911,28 @@ class TinyAiInstance2 extends EventEmitter {
    * @throws {Error} If the provided session ID is invalid or the session ID does not exist in history.
    */
   addData(data, tokenData = { count: null }, id = undefined) {
+    if (!data || typeof data !== 'object')
+      throw new TypeError('Invalid data parameter! Must be a valid object.');
+
     const selectedId = this.getId(id);
-    if (selectedId && this.history[selectedId]) {
-      if (typeof this.history[selectedId].nextId !== 'number') this.history[selectedId].nextId = 0;
-      const newId = this.history[selectedId].nextId;
-      this.history[selectedId].nextId++;
-      const hash = objHash(data);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
 
-      const tokenContent = isJsonObject(tokenData)
-        ? tokenData
-        : { count: typeof tokenData === 'number' ? tokenData : null };
+    if (typeof this.history[selectedId].nextId !== 'number') this.history[selectedId].nextId = 0;
+    const newId = this.history[selectedId].nextId;
+    this.history[selectedId].nextId++;
+    const hash = objHash(data);
 
-      this.history[selectedId].data.push(data);
-      this.history[selectedId].tokens.data.push(tokenContent);
-      this.history[selectedId].ids.push(newId);
-      this.history[selectedId].hash.data.push(hash);
+    const tokenContent = isJsonObject(tokenData)
+      ? tokenData
+      : { count: typeof tokenData === 'number' ? tokenData : null };
 
-      this.emit('addData', newId, data, tokenContent, hash, selectedId);
-      return newId;
-    }
-    throw new Error('Invalid history id data!');
+    this.history[selectedId].data.push(data);
+    this.history[selectedId].tokens.data.push(tokenContent);
+    this.history[selectedId].ids.push(newId);
+    this.history[selectedId].hash.data.push(hash);
+
+    this.emit('addData', newId, data, tokenContent, hash, selectedId);
+    return newId;
   }
 
   /**
@@ -928,19 +944,20 @@ class TinyAiInstance2 extends EventEmitter {
    * @throws {Error} If the provided session ID is invalid or the prompt data is not a string.
    */
   setPrompt(promptData, tokenAmount, id) {
-    const selectedId = this.getId(id);
-    if (selectedId && this.history[selectedId]) {
-      if (typeof promptData === 'string') {
-        const hash = objHash(promptData);
-        this.history[selectedId].prompt = promptData;
-        this.history[selectedId].hash.prompt = hash;
-      }
+    if (typeof promptData !== 'string')
+      throw new TypeError('Invalid prompt data type! Must be a string.');
+    if (tokenAmount !== undefined && typeof tokenAmount !== 'number')
+      throw new TypeError('Invalid token amount data type! Must be a number.');
 
-      if (typeof tokenAmount === 'number') this.history[selectedId].tokens.prompt = tokenAmount;
-      this.emit('setPrompt', promptData, selectedId);
-      return;
-    }
-    throw new Error('Invalid history id data!');
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    const hash = objHash(promptData);
+    this.history[selectedId].prompt = promptData;
+    this.history[selectedId].hash.prompt = hash;
+
+    if (typeof tokenAmount === 'number') this.history[selectedId].tokens.prompt = tokenAmount;
+    this.emit('setPrompt', promptData, selectedId);
   }
 
   /**
@@ -972,20 +989,21 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void}
    */
   setFirstDialogue(dialogue, tokenAmount, id) {
-    const selectedId = this.getId(id);
-    if (selectedId && this.history[selectedId]) {
-      if (typeof dialogue === 'string') {
-        const hash = objHash(dialogue);
-        this.history[selectedId].firstDialogue = dialogue;
-        this.history[selectedId].hash.firstDialogue = hash;
-      }
+    if (typeof dialogue !== 'string')
+      throw new TypeError('Invalid dialogue data type! Must be a string.');
+    if (tokenAmount !== undefined && typeof tokenAmount !== 'number')
+      throw new TypeError('Invalid token amount data type! Must be a number.');
 
-      if (typeof tokenAmount === 'number')
-        this.history[selectedId].tokens.firstDialogue = tokenAmount;
-      this.emit('setFirstDialogue', dialogue, selectedId);
-      return;
-    }
-    throw new Error('Invalid history id data!');
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    const hash = objHash(dialogue);
+    this.history[selectedId].firstDialogue = dialogue;
+    this.history[selectedId].hash.firstDialogue = hash;
+
+    if (typeof tokenAmount === 'number')
+      this.history[selectedId].tokens.firstDialogue = tokenAmount;
+    this.emit('setFirstDialogue', dialogue, selectedId);
   }
 
   /**
@@ -1017,20 +1035,21 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void}
    */
   setSystemInstruction(data, tokenAmount, id) {
-    const selectedId = this.getId(id);
-    if (selectedId && this.history[selectedId]) {
-      if (typeof data === 'string') {
-        const hash = objHash(data);
-        this.history[selectedId].systemInstruction = data;
-        this.history[selectedId].hash.systemInstruction = hash;
-      }
+    if (typeof data !== 'string')
+      throw new TypeError('Invalid system instruction data type! Must be a string.');
+    if (tokenAmount !== undefined && typeof tokenAmount !== 'number')
+      throw new TypeError('Invalid token amount data type! Must be a number.');
 
-      if (typeof tokenAmount === 'number')
-        this.history[selectedId].tokens.systemInstruction = tokenAmount;
-      this.emit('setSystemInstruction', data, selectedId);
-      return;
-    }
-    throw new Error('Invalid history id data!');
+    const selectedId = this.getId(id);
+    if (!selectedId || !this.history[selectedId]) throw new Error('Invalid history id data!');
+
+    const hash = objHash(data);
+    this.history[selectedId].systemInstruction = data;
+    this.history[selectedId].hash.systemInstruction = hash;
+
+    if (typeof tokenAmount === 'number')
+      this.history[selectedId].tokens.systemInstruction = tokenAmount;
+    this.emit('setSystemInstruction', data, selectedId);
   }
 
   /**
@@ -1095,6 +1114,8 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {SessionData} The newly created session data.
    */
   startDataId(id, selected = false) {
+    if (typeof id !== 'string' || id.trim() === '')
+      throw new TypeError('Invalid session ID! Must be a non-empty string.');
     this.history[id] = {
       data: [],
       ids: [],
@@ -1119,6 +1140,8 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {boolean} `true` if the session ID was found and successfully stopped, `false` otherwise.
    */
   stopDataId(id) {
+    if (typeof id !== 'string')
+      throw new TypeError('Invalid session ID to stop! Must be a string.');
     if (this.history[id]) {
       delete this.history[id];
       if (this.getId() === id) this.selectDataId(null);

@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TinyAiInstance2 - API Playground</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "object-hash": "https://cdn.jsdelivr.net/npm/object-hash@3.0.0/+esm",
+          "js-base64": "https://cdn.jsdelivr.net/npm/js-base64@3.7.8/+esm",
+          "events": "https://cdn.jsdelivr.net/npm/events@3.3.0/+esm",
+          "buffer": "https://cdn.jsdelivr.net/npm/buffer@6.0.3/+esm"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        --bg-color: #121212;
+        --panel-bg: #1e1e2e;
+        --border-color: #313244;
+        --text-main: #cdd6f4;
+        --text-muted: #a6adc8;
+        --accent: #cba6f7;
+        --accent-hover: #b4befe;
+        --msg-user: #27273a;
+        --msg-ai: #1e1e2e;
+        --msg-sys: #313244;
+        --danger: #f38ba8;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Sidebar / Settings Panel */
+      .sidebar {
+        width: 400px;
+        background-color: var(--panel-bg);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .sidebar h2 {
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* Accordion Settings */
+      details {
+        background-color: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        margin-bottom: 15px;
+        overflow: hidden;
+      }
+
+      summary {
+        padding: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        background-color: #181825;
+        color: var(--accent-hover);
+        user-select: none;
+        transition: background-color 0.2s;
+      }
+
+      summary:hover {
+        background-color: var(--border-color);
+      }
+
+      .details-content {
+        padding: 15px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      details {
+        overflow-y: auto;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-row {
+        display: flex;
+        gap: 10px;
+      }
+
+      .form-row > .form-group {
+        flex: 1;
+      }
+
+      .form-group label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+      }
+
+      input[type='text'],
+      input[type='number'],
+      select,
+      textarea {
+        background-color: var(--bg-color);
+        border: 1px solid var(--border-color);
+        color: var(--text-main);
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border-color 0.2s;
+        width: 100%;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+      }
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+        font-family: monospace;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+
+      button {
+        background-color: var(--accent);
+        color: var(--bg-color);
+        border: none;
+        padding: 10px 15px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-top: 5px;
+        width: 100%;
+      }
+
+      button:hover {
+        background-color: var(--accent-hover);
+      }
+      button.secondary {
+        background-color: var(--border-color);
+        color: var(--text-main);
+      }
+      button.secondary:hover {
+        background-color: #45475a;
+      }
+      button.danger {
+        background-color: var(--danger);
+        color: #111;
+        margin-top: 10px;
+      }
+
+      /* Main Chat Area */
+      .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        max-width: 1600px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .chat-window {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .message {
+        padding: 15px 20px;
+        border-radius: 8px;
+        max-width: 85%;
+        line-height: 1.5;
+        word-wrap: break-word;
+        border: 1px solid var(--border-color);
+      }
+
+      .message.user {
+        background-color: var(--msg-user);
+        align-self: flex-end;
+        border-color: var(--accent);
+      }
+      .message.assistant {
+        background-color: var(--msg-ai);
+        align-self: flex-start;
+      }
+      .message.system {
+        background-color: var(--msg-sys);
+        align-self: center;
+        font-style: italic;
+        font-size: 0.9rem;
+        max-width: 95%;
+      }
+      .message .meta {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+        display: block;
+      }
+      .message pre {
+        background: #111;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+        margin-top: 10px;
+        font-size: 0.85rem;
+      }
+
+      .input-area {
+        padding: 20px;
+        background-color: var(--panel-bg);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        gap: 15px;
+      }
+
+      .input-area textarea {
+        flex: 1;
+        min-height: 50px;
+        max-height: 150px;
+        font-family: inherit;
+      }
+
+      .input-area button {
+        width: 120px;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <h2>Playground Settings</h2>
+
+      <details open>
+        <summary>Connection & Identity</summary>
+        <div class="details-content">
+          <div class="form-group">
+            <label for="apiUrl">API Base URL</label>
+            <input type="text" id="apiUrl" value="http://localhost:1234/v1" />
+          </div>
+          <div class="form-group">
+            <label for="apiKey">API Key</label>
+            <input type="text" id="apiKey" value="lm-studio" />
+          </div>
+          <div class="form-group">
+            <label for="modelId">Model ID</label>
+            <div style="display: flex; gap: 5px">
+              <input type="text" id="modelId" value="local-model" style="flex: 1" />
+              <button
+                type="button"
+                id="btnFetchModels"
+                class="secondary"
+                style="margin: 0; width: auto"
+                title="Fetch Models"
+              >
+                🔄
+              </button>
+            </div>
+            <select id="modelSelect" style="display: none; margin-top: 5px"></select>
+          </div>
+          <div class="form-group">
+            <label for="sysInstruction">System Instruction</label>
+            <textarea id="sysInstruction">
+You are a highly intelligent and helpful AI assistant.</textarea
+            >
+          </div>
+        </div>
+      </details>
+
+      <details open>
+        <summary>Core Parameters</summary>
+        <div class="details-content">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="maxTokens">Max Tokens</label>
+              <input type="number" id="maxTokens" value="1024" min="1" />
+            </div>
+            <div class="form-group">
+              <label for="temperature">Temperature</label>
+              <input type="number" id="temperature" value="0.7" step="0.1" min="0" max="2" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="topP">Top P</label>
+              <input type="number" id="topP" value="1.0" step="0.1" min="0" max="1" />
+            </div>
+            <div class="form-group">
+              <label for="topK">Top K</label>
+              <input type="number" id="topK" value="40" min="1" />
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Advanced Penalties & Configs</summary>
+        <div class="details-content">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="presencePenalty">Presence Penalty</label>
+              <input
+                type="number"
+                id="presencePenalty"
+                placeholder="0.0"
+                step="0.1"
+                min="-2"
+                max="2"
+              />
+            </div>
+            <div class="form-group">
+              <label for="frequencyPenalty">Frequency Penalty</label>
+              <input
+                type="number"
+                id="frequencyPenalty"
+                placeholder="0.0"
+                step="0.1"
+                min="-2"
+                max="2"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="repeatPenalty">Repeat Penalty</label>
+              <input type="number" id="repeatPenalty" placeholder="1.1" step="0.1" min="0" />
+            </div>
+            <div class="form-group">
+              <label for="seed">Seed</label>
+              <input type="number" id="seed" placeholder="42" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="stopSeq">Stop Sequences (comma separated)</label>
+            <input type="text" id="stopSeq" placeholder="\\n, User:, END" />
+          </div>
+          <div class="form-group">
+            <label for="logitBias">Logit Bias (JSON Object)</label>
+            <textarea id="logitBias" placeholder='{"50256": -100}'></textarea>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Tools & Modes</summary>
+        <div class="details-content">
+          <div class="checkbox-group">
+            <input type="checkbox" id="enableStream" checked />
+            <label for="enableStream" style="margin: 0">Enable Streaming</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="enableTools" />
+            <label for="enableTools" style="margin: 0">Enable Test Tools (Weather Mock)</label>
+          </div>
+          <div class="form-group">
+            <label for="toolChoice">Tool Choice</label>
+            <input type="text" id="toolChoice" placeholder="auto, none, required, or JSON" />
+          </div>
+        </div>
+      </details>
+
+      <button id="btnInit" class="secondary">Apply Configurations</button>
+      <button id="btnClear" class="danger">Clear Chat History</button>
+    </aside>
+
+    <main class="main-content">
+      <div class="chat-window" id="chatWindow">
+        <div class="message system">
+          <span class="meta">System</span>
+          Welcome to the TinyAiInstance2 Playground. Configure the settings on the left and click
+          "Apply Configurations" to begin.
+        </div>
+      </div>
+
+      <div class="input-area">
+        <textarea
+          id="promptInput"
+          placeholder="Type your message here... (Press Enter to send, Shift+Enter for newline)"
+        ></textarea>
+        <button id="btnSend">Send</button>
+      </div>
+    </main>
+
+    <script type="module">
+      import { TinyOpenAiCompatible } from './src/services/OpenAiCompatible.mjs';
+
+      // UI Elements Mapping
+      const els = {
+        apiUrl: document.getElementById('apiUrl'),
+        apiKey: document.getElementById('apiKey'),
+        modelId: document.getElementById('modelId'),
+        modelSelect: document.getElementById('modelSelect'),
+        btnFetchModels: document.getElementById('btnFetchModels'),
+        sysInstruction: document.getElementById('sysInstruction'),
+        maxTokens: document.getElementById('maxTokens'),
+        temperature: document.getElementById('temperature'),
+        topP: document.getElementById('topP'),
+        topK: document.getElementById('topK'),
+        presencePenalty: document.getElementById('presencePenalty'),
+        frequencyPenalty: document.getElementById('frequencyPenalty'),
+        repeatPenalty: document.getElementById('repeatPenalty'),
+        seed: document.getElementById('seed'),
+        stopSeq: document.getElementById('stopSeq'),
+        logitBias: document.getElementById('logitBias'),
+        enableStream: document.getElementById('enableStream'),
+        enableTools: document.getElementById('enableTools'),
+        toolChoice: document.getElementById('toolChoice'),
+        btnInit: document.getElementById('btnInit'),
+        btnClear: document.getElementById('btnClear'),
+        chatWindow: document.getElementById('chatWindow'),
+        promptInput: document.getElementById('promptInput'),
+        btnSend: document.getElementById('btnSend'),
+      };
+
+      /** @type {TinyOpenAiCompatible|null} */
+      let aiInstance = null;
+      const sessionId = 'test-session';
+
+      /**
+       * Appends a message to the chat window.
+       * @param {string} role - user, assistant, system, or tool.
+       * @param {string} content - The message content.
+       * @param {string} [id] - Optional ID for updating streamed messages.
+       * @returns {HTMLElement} The created DOM element.
+       */
+      const appendMessage = (role, content, id = null) => {
+        let msgEl = id ? document.getElementById(id) : null;
+
+        if (!msgEl) {
+          msgEl = document.createElement('div');
+          msgEl.className = `message ${role}`;
+          if (id) msgEl.id = id;
+
+          const metaEl = document.createElement('span');
+          metaEl.className = 'meta';
+          metaEl.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+
+          const contentEl = document.createElement('div');
+          contentEl.className = 'content';
+          contentEl.innerHTML = formatContent(content);
+
+          msgEl.appendChild(metaEl);
+          msgEl.appendChild(contentEl);
+          els.chatWindow.appendChild(msgEl);
+        } else {
+          const contentEl = msgEl.querySelector('.content');
+          if (contentEl) contentEl.innerHTML = formatContent(content);
+        }
+
+        els.chatWindow.scrollTop = els.chatWindow.scrollHeight;
+        return msgEl;
+      };
+
+      /**
+       * Safely formats plain text to basic HTML (newlines and code blocks).
+       * @param {string} text - The raw text.
+       * @returns {string} Formatted HTML string.
+       */
+      const formatContent = (text) => {
+        if (!text) return '';
+        let safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        safeText = safeText.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+        return safeText.replace(/\n/g, '<br>');
+      };
+
+      /**
+       * Safely attempts to parse JSON strings.
+       * @param {string} val - The string to parse.
+       * @returns {Object|null} Parsed JSON or null.
+       */
+      const safeParseJSON = (val) => {
+        if (!val || !val.trim()) return null;
+        try {
+          return JSON.parse(val);
+        } catch (e) {
+          console.warn('Invalid JSON format provided:', val);
+          return null;
+        }
+      };
+
+      /**
+       * Reusable template function to apply a setting to the TinyAiInstance safely.
+       * @param {string} method - The name of the instance method.
+       * @param {string} value - The raw string value from the input.
+       * @param {Function} [parser] - Optional parsing function (e.g., parseFloat).
+       */
+      const applySetting = (method, value, parser) => {
+        if (value === undefined || value === '') {
+          aiInstance[method](null);
+          return;
+        }
+        try {
+          const parsed = parser ? parser(value) : value;
+          // Avoid setting NaN
+          if (typeof parsed === 'number' && Number.isNaN(parsed)) {
+            aiInstance[method](null);
+          } else {
+            aiInstance[method](parsed);
+          }
+        } catch (e) {
+          aiInstance[method](null);
+        }
+      };
+
+      /**
+       * Initializes the TinyOpenAiCompatible instance and maps all UI configurations.
+       */
+      const initializeAi = () => {
+        try {
+          if (aiInstance) aiInstance.destroy();
+
+          aiInstance = new TinyOpenAiCompatible(
+            els.apiUrl.value,
+            els.apiKey.value,
+            els.modelId.value,
+          );
+          aiInstance.startDataId(sessionId, true);
+
+          // Core Generation Parameters
+          applySetting('setMaxOutputTokens', els.maxTokens.value, parseInt);
+          applySetting('setTemperature', els.temperature.value, parseFloat);
+          applySetting('setTopP', els.topP.value, parseFloat);
+          applySetting('setTopK', els.topK.value, parseInt);
+
+          // Advanced Penalties & Configs
+          applySetting('setPresencePenalty', els.presencePenalty.value, parseFloat);
+          applySetting('setFrequencyPenalty', els.frequencyPenalty.value, parseFloat);
+          applySetting('setRepeatPenalty', els.repeatPenalty.value, parseFloat);
+          applySetting('setSeed', els.seed.value, parseInt);
+          applySetting('setLogitBias', els.logitBias.value, safeParseJSON);
+
+          // Stop Sequences (Parse comma separated list)
+          applySetting('setStop', els.stopSeq.value, (val) => {
+            if (!val) return null;
+            return val
+              .split(',')
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0);
+          });
+
+          // System Instruction
+          if (els.sysInstruction.value.trim()) {
+            aiInstance.setSystemInstruction(els.sysInstruction.value.trim());
+          } else {
+            aiInstance.setSystemInstruction(null);
+          }
+
+          // Tools Setup
+          if (els.enableTools.checked) {
+            aiInstance.setTools([
+              {
+                type: 'function',
+                function: {
+                  name: 'get_weather',
+                  description: 'Fetch the weather for a specific city.',
+                  parameters: {
+                    type: 'object',
+                    properties: { location: { type: 'string', description: 'The city name' } },
+                    required: ['location'],
+                  },
+                },
+              },
+            ]);
+          } else {
+            aiInstance.setTools(null);
+          }
+
+          // Tool Choice parsing (can be string or specific object)
+          applySetting('setToolChoice', els.toolChoice.value, (val) => {
+            const trimmed = val.trim();
+            if (!trimmed) return null;
+            if (['auto', 'none', 'required'].includes(trimmed)) return trimmed;
+            return safeParseJSON(trimmed);
+          });
+
+          appendMessage('system', 'Configuration applied successfully. Ready to generate.');
+        } catch (err) {
+          appendMessage('system', `Failed to initialize: ${err.message}`);
+          console.error(err);
+        }
+      };
+
+      /**
+       * Fetches available models from the local/remote API.
+       */
+      const fetchModels = async () => {
+        if (!aiInstance) initializeAi();
+
+        els.btnFetchModels.textContent = '⏳';
+        try {
+          const response = await aiInstance.getModels();
+          if (response.newData && response.newData.length > 0) {
+            els.modelSelect.innerHTML = '';
+            response.newData.forEach((model) => {
+              const opt = document.createElement('option');
+              opt.value = model.id;
+              opt.textContent = model.id;
+              els.modelSelect.appendChild(opt);
+            });
+
+            els.modelSelect.style.display = 'block';
+            els.modelSelect.onchange = () => {
+              els.modelId.value = els.modelSelect.value;
+            };
+            els.modelId.value = els.modelSelect.value;
+
+            appendMessage('system', `Fetched ${response.newData.length} models successfully.`);
+          } else {
+            appendMessage('system', 'No models found in the API response.');
+          }
+        } catch (err) {
+          appendMessage('system', `Error fetching models: ${err.message}`);
+        } finally {
+          els.btnFetchModels.textContent = '🔄';
+        }
+      };
+
+      /**
+       * Compiles payload and sends message to the AI.
+       */
+      const sendMessage = async () => {
+        if (!aiInstance) initializeAi();
+        const prompt = els.promptInput.value.trim();
+        if (!prompt) return;
+
+        els.promptInput.value = '';
+        appendMessage('user', prompt);
+
+        aiInstance.addData({ role: 'user', content: prompt });
+
+        const isStream = els.enableStream.checked;
+        const streamId = `stream-${Date.now()}`;
+
+        try {
+          els.btnSend.disabled = true;
+
+          const sessionData = aiInstance.getData(sessionId);
+          const requestPayload = [];
+          if (sessionData.systemInstruction) {
+            requestPayload.push({ role: 'system', content: sessionData.systemInstruction });
+          }
+          requestPayload.push(...sessionData.data);
+
+          let finalResponseText = '';
+
+          const response = await aiInstance.genContent(
+            requestPayload,
+            els.modelId.value,
+            null,
+            isStream
+              ? (chunk) => {
+                  if (!chunk.done && chunk.contents && chunk.contents.length > 0) {
+                    const currentContent = chunk.contents[0];
+
+                    if (currentContent.content) {
+                      finalResponseText = currentContent.content;
+                      appendMessage('assistant', finalResponseText, streamId);
+                    }
+
+                    if (currentContent.tool_calls && currentContent.tool_calls.length > 0) {
+                      const funcName = currentContent.tool_calls[0]?.function?.name;
+                      const funcArgs = currentContent.tool_calls[0]?.function?.arguments;
+                      appendMessage(
+                        'system',
+                        `Calling Tool: ${funcName}\nArgs: ${funcArgs}`,
+                        streamId + '-tool',
+                      );
+                    }
+                  }
+                }
+              : undefined,
+          );
+
+          if (!isStream && response.contents && response.contents.length > 0) {
+            const aiReply = response.contents[0];
+
+            if (aiReply.content) {
+              appendMessage('assistant', aiReply.content);
+              aiInstance.addData({ role: 'assistant', content: aiReply.content });
+            }
+
+            if (aiReply.tool_calls) {
+              const funcCall = aiReply.tool_calls[0];
+              appendMessage(
+                'system',
+                `Tool Call Requested: ${funcCall.function.name}\nArgs: ${funcCall.function.arguments}`,
+              );
+              aiInstance.addData({
+                role: 'assistant',
+                content: '',
+                tool_calls: aiReply.tool_calls,
+              });
+            }
+          } else if (isStream && finalResponseText) {
+            aiInstance.addData({ role: 'assistant', content: finalResponseText });
+          }
+        } catch (err) {
+          appendMessage('system', `Error generating content: ${err.message}`);
+          console.error(err);
+        } finally {
+          els.btnSend.disabled = false;
+          els.promptInput.focus();
+        }
+      };
+
+      // Events Setup
+      els.btnInit.addEventListener('click', initializeAi);
+      els.btnFetchModels.addEventListener('click', fetchModels);
+      els.btnSend.addEventListener('click', sendMessage);
+      els.btnClear.addEventListener('click', () => {
+        els.chatWindow.innerHTML = '';
+        if (aiInstance) aiInstance.resetContentData(sessionId);
+        appendMessage('system', 'Chat history cleared.');
+      });
+
+      els.promptInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      // Auto-Initialize on page load
+      window.addEventListener('DOMContentLoaded', initializeAi);
+    </script>
+  </body>
+</html>
