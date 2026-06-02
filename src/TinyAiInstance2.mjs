@@ -110,11 +110,27 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
 class TinyAiInstance2 extends EventEmitter {
   /** @type {string|null} */ #selectedHistory = null;
 
+  /** @type {Map<string, { value: any, type: string, tokenAmount?: number }>} */
+  #customValues = new Map();
+
+  /** @returns {Record<string, { value: any, type: string, tokenAmount?: number }>} */
+  get customValues() {
+    return Object.fromEntries(this.#customValues);
+  }
+
+  get customValuesSize() {
+    return this.#customValues.size;
+  }
+
   /** @type {Map<string, SessionData>} */ #history = new Map();
 
   /** @returns {Record<string, SessionData>} */
   get history() {
     return Object.fromEntries(this.#history);
+  }
+
+  get historySize() {
+    return this.#history.size;
   }
 
   #isSingle = false;
@@ -219,13 +235,13 @@ class TinyAiInstance2 extends EventEmitter {
   }
 
   /**
-   * Sets a custom value in the selected session history.
+   * Sets a custom value in the selected session history or globally via ROOT.
    *
    * @param {string} name - The name of the custom value to set.
    * @param {*} value - The value to be assigned to the custom key.
    * @param {number} [tokenAmount] - The token amount associated with the custom value (optional).
-   * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @throws {Error} If the custom value name is invalid or conflicts with existing data.
+   * @param {string} [id] - The session ID or 'ROOT'. If omitted, the currently selected session history ID will be used.
+   * @throws {Error} If the custom value name is invalid, type conflicts with ROOT, or data is corrupted.
    */
   setCustomValue(name, value, tokenAmount, id) {
     if (typeof name !== 'string' || name.length === 0 || name === 'customList')
@@ -233,21 +249,65 @@ class TinyAiInstance2 extends EventEmitter {
     if (tokenAmount !== undefined && typeof tokenAmount !== 'number')
       throw new TypeError('Invalid token amount! Must be a number.');
 
-    // This value is extremely important for the import process to identify which custom values are being used
+    const type = value !== null ? (objType(value)?.toString() ?? '') : '';
+
+    if (id === 'ROOT') {
+      if (value === null)
+        throw new Error(
+          'ROOT custom values cannot be null! Use eraseCustomValue to remove them completely.',
+        );
+
+      this.#customValues.set(name, { value, type, tokenAmount });
+
+      // Synchronize ROOT definition across all active sessions
+      for (const [, history] of this.#history.entries()) {
+        if (!Array.isArray(history.customList)) history.customList = [];
+
+        let props = history.customList.find((item) => item.name === name);
+        if (!props) {
+          history.customList.push({ name, type });
+        } else {
+          props.type = type; // Force sync the type validator
+        }
+
+        // Only apply the ROOT value to the session if it hasn't been overridden locally
+        if (typeof history[name] === 'undefined' || history[name] === null) {
+          history[name] = value;
+          history.hash[name] = objHash(value);
+          if (typeof tokenAmount === 'number') history.tokens[name] = tokenAmount;
+        }
+      }
+      this.emit(`set${this.#capitalizeFirstLetter(name)}`, value, 'ROOT');
+      return;
+    }
+
     const selectedId = this.getId(id);
     const history = typeof selectedId === 'string' ? this.#history.get(selectedId) : undefined;
     if (!history) throw new Error('Invalid history id data!');
     if (!Array.isArray(history.customList)) history.customList = [];
 
-    // Validate the custom value
+    const rootDef = this.#customValues.get(name);
+
+    // If defined in ROOT, validate the local session strictly against ROOT rules
+    if (rootDef && value !== null) {
+      if (type !== rootDef.type) {
+        throw new Error(
+          `Corrupted custom value! Type conflict with ROOT definition. Expected ${rootDef.type}, got ${type}. Use resetCustomValue to restore to a valid state.`,
+        );
+      }
+    }
+
+    // Normal session validation
     if (value !== null) {
       const props = history.customList.find((item) => item.name === name);
       if (!props || typeof props.type !== 'string' || typeof props.name !== 'string') {
         if (typeof history[name] === 'undefined') {
-          history.customList.push({ name, type: objType(value)?.toString() ?? '' });
+          history.customList.push({ name, type });
         } else throw new Error('This value name is already being used!');
-      } else if (props.type !== objType(value))
-        throw new Error(`Invalid custom value type! Expected ${props.type}, got ${objType(value)}`);
+      } else if (props.type !== type)
+        throw new Error(
+          `Invalid custom value type! Expected ${props.type}, got ${type}. Use resetCustomValue to restore to a valid state.`,
+        );
     }
 
     // Add Tokens
@@ -264,7 +324,7 @@ class TinyAiInstance2 extends EventEmitter {
   }
 
   /**
-   * Resets a custom value in the selected session history.
+   * Resets a custom value in the selected session history to null.
    *
    * @param {string} name - The name of the custom value to reset.
    * @param {string} [id] - The session ID.
@@ -273,6 +333,12 @@ class TinyAiInstance2 extends EventEmitter {
   resetCustomValue(name, id) {
     if (typeof name !== 'string' || name.length === 0 || name === 'customList')
       throw new TypeError('Invalid custom value name!');
+
+    if (id === 'ROOT') {
+      throw new Error(
+        'You cannot reset a ROOT value directly. Use eraseCustomValue to delete it from ROOT or setCustomValue to overwrite it.',
+      );
+    }
 
     // This value is extremely important for the import process to identify which custom values are being used
     const selectedId = this.getId(id);
@@ -297,35 +363,98 @@ class TinyAiInstance2 extends EventEmitter {
   }
 
   /**
-   * Completely removes a custom value from the selected session history.
+   * Completely removes a custom value from the selected session history or globally via ROOT.
    *
    * @param {string} name - The name of the custom value to erase.
-   * @param {string} [id] - The session ID.
+   * @param {string} [id] - The session ID or 'ROOT'.
    * @throws {Error} If the custom value name is invalid or does not exist.
    */
   eraseCustomValue(name, id) {
-    this.resetCustomValue(name, id);
-    const history = this.getData(id);
-    if (history && history.customList) {
-      const index = history.customList.findIndex((item) => item.name === name);
-      if (index > -1) history.customList.splice(index, 1);
+    if (typeof name !== 'string' || name.length === 0 || name === 'customList')
+      throw new TypeError('Invalid custom value name!');
+
+    if (id === 'ROOT') {
+      this.#customValues.delete(name);
+      for (const [, history] of this.#history.entries()) {
+        if (history.customList) {
+          const index = history.customList.findIndex((item) => item.name === name);
+          if (index > -1) history.customList.splice(index, 1);
+        }
+        delete history[name];
+        delete history.hash[name];
+        delete history.tokens[name];
+      }
+      this.emit(`erase${this.#capitalizeFirstLetter(name)}`, 'ROOT');
       return;
     }
-    throw new Error('Failed to erase custom value: History not found!');
+
+    const selectedId = this.getId(id);
+    const history = typeof selectedId === 'string' ? this.#history.get(selectedId) : undefined;
+    if (!history) throw new Error('Failed to erase custom value: History not found!');
+
+    const rootDef = this.#customValues.get(name);
+
+    // If ROOT defines this value, erasing the session override restores the ROOT default
+    if (rootDef) {
+      history[name] = rootDef.value;
+      history.hash[name] = objHash(rootDef.value);
+      if (typeof rootDef.tokenAmount === 'number') {
+        history.tokens[name] = rootDef.tokenAmount;
+      } else {
+        delete history.tokens[name];
+      }
+
+      if (!Array.isArray(history.customList)) history.customList = [];
+      let props = history.customList.find((item) => item.name === name);
+      if (!props) {
+        history.customList.push({ name, type: rootDef.type });
+      } else {
+        props.type = rootDef.type;
+      }
+
+      this.emit(`erase${this.#capitalizeFirstLetter(name)}RestoreRoot`, rootDef.value, selectedId);
+      return;
+    }
+
+    // Normal full erase
+    this.resetCustomValue(name, selectedId ?? undefined);
+    if (history.customList) {
+      const index = history.customList.findIndex((item) => item.name === name);
+      if (index > -1) history.customList.splice(index, 1);
+    }
   }
 
   /**
-   * Retrieves a custom value from the selected session history.
+   * Retrieves a custom value from the selected session history or falls back to ROOT.
    *
    * @param {string} name - The name of the custom value to retrieve.
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
    * @returns {*} The value associated with the specified name, or `null` if it does not exist.
+   * @throws {Error} If a conflict/corruption is detected between the session and the ROOT definition.
    */
   getCustomValue(name, id) {
-    const history = this.getData(id);
-    return history && typeof history[name] !== 'undefined' && history[name] !== null
-      ? history[name]
-      : null;
+    const selectedId = this.getId(id);
+    const history = typeof selectedId === 'string' ? this.#history.get(selectedId) : undefined;
+    if (!history) return null;
+
+    const rootDef = this.#customValues.get(name);
+    const sessionVal = history[name];
+
+    // Conflict detection
+    if (rootDef && sessionVal !== undefined && sessionVal !== null) {
+      const sessionType = objType(sessionVal)?.toString() ?? '';
+      if (sessionType !== rootDef.type) {
+        throw new Error(
+          `Conflict detected! The session custom value '${name}' conflicts with the ROOT definition (Expected ${rootDef.type}, got ${sessionType}). Please use eraseCustomValue to clear the corruption.`,
+        );
+      }
+    }
+
+    return typeof sessionVal !== 'undefined' && sessionVal !== null
+      ? sessionVal
+      : rootDef
+        ? rootDef.value
+        : null;
   }
 
   /**
@@ -1110,6 +1239,7 @@ class TinyAiInstance2 extends EventEmitter {
   startDataId(id, selected = false) {
     if (typeof id !== 'string' || id.trim() === '')
       throw new TypeError('Invalid session ID! Must be a non-empty string.');
+    if (id === 'ROOT') throw new Error('Invalid session ID! (ROOT BLOCKED!)');
     const result = {
       data: [],
       ids: [],
@@ -1139,6 +1269,7 @@ class TinyAiInstance2 extends EventEmitter {
   stopDataId(id) {
     if (typeof id !== 'string')
       throw new TypeError('Invalid session ID to stop! Must be a string.');
+    if (id === 'ROOT') throw new Error('Invalid session ID to stop! (ROOT BLOCKED!)');
     if (this.#history.has(id)) {
       this.#history.delete(id);
       if (this.getId() === id) this.selectedHistory = null;
@@ -1162,8 +1293,9 @@ class TinyAiInstance2 extends EventEmitter {
    */
   destroy() {
     if (!this.#isSingle) {
-      for (const id in this.#history) this.stopDataId(id);
+      for (const id of this.#history.keys()) this.stopDataId(id);
     } else this.stopDataId('main');
+    this.#customValues.clear();
     this.removeAllListeners();
   }
 }
