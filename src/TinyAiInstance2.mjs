@@ -108,6 +108,12 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
  */
 class TinyAiInstance2 extends EventEmitter {
+  #destroyed = false;
+
+  get destroyed() {
+    return this.#destroyed;
+  }
+
   /** @type {string|null} */ #selectedHistory = null;
 
   /** @type {Map<string, { value: any, type: string, tokenAmount?: number }>} */
@@ -1237,6 +1243,7 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {SessionData} The newly created session data.
    */
   startDataId(id, selected = false) {
+    if (this.#destroyed) throw new Error('The instance is destroyed!');
     if (typeof id !== 'string' || id.trim() === '')
       throw new TypeError('Invalid session ID! Must be a non-empty string.');
     if (id === 'ROOT') throw new Error('Invalid session ID! (ROOT BLOCKED!)');
@@ -1292,6 +1299,8 @@ class TinyAiInstance2 extends EventEmitter {
    * @returns {void}
    */
   destroy() {
+    if (this.#destroyed) return;
+    this.#destroyed = true;
     if (!this.#isSingle) {
       for (const id of this.#history.keys()) this.stopDataId(id);
     } else this.stopDataId('main');
