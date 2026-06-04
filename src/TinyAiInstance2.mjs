@@ -112,7 +112,7 @@ import { cloneDeep } from 'lodash';
  */
 
 /**
- * Tiny AI Server Communication API (OpenAI Standard)
+ * Tiny AI Server Communication API Core (OpenAI Standard)
  * -----------------------------
  * This class manages AI session data natively using the OpenAI API structure.
  * It uses 'role', 'content', and supports 'tools'/'tool_calls' making it perfect
@@ -121,9 +121,9 @@ import { cloneDeep } from 'lodash';
  * **Note**: This script does not automatically track token count natively since
  * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
  *
- * @template {SessionData} T
+ * @template {SessionData & Record<string, any>} T
  */
-class TinyAiInstance2 extends EventEmitter {
+export class TinyAiInstanceCore2 extends EventEmitter {
   #destroyed = false;
 
   get destroyed() {
@@ -206,7 +206,7 @@ class TinyAiInstance2 extends EventEmitter {
   }
 
   /**
-   * Creates an instance of the TinyAiInstance2 class.
+   * Creates an instance of the TinyAiInstance2Core class.
    *
    * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
    * @param {T} [modData]
@@ -410,13 +410,13 @@ class TinyAiInstance2 extends EventEmitter {
 
       // Update the #defaultSessionData to persist this root value to future sessions
       this.#defaultSessionData[name] = value;
-      
+
       if (value !== null) {
         this.#defaultSessionData.hash[name] = objHash(value);
       } else {
         delete this.#defaultSessionData.hash[name];
       }
-      
+
       if (typeof tokenAmount === 'number') {
         this.#defaultSessionData.tokens[name] = tokenAmount;
       }
@@ -447,13 +447,13 @@ class TinyAiInstance2 extends EventEmitter {
         if (typeof history[name] === 'undefined' || history[name] === null) {
           // @ts-ignore
           history[name] = value;
-          
+
           if (value !== null) {
             history.hash[name] = objHash(value);
           } else {
             delete history.hash[name];
           }
-          
+
           if (typeof tokenAmount === 'number') history.tokens[name] = tokenAmount;
         }
       }
@@ -1483,4 +1483,25 @@ class TinyAiInstance2 extends EventEmitter {
   }
 }
 
-export default TinyAiInstance2;
+/**
+ * Tiny AI Server Communication API (OpenAI Standard)
+ * -----------------------------
+ * This class manages AI session data natively using the OpenAI API structure.
+ * It uses 'role', 'content', and supports 'tools'/'tool_calls' making it perfect
+ * for local models via LM Studio, vLLM, or the official OpenAI API.
+ *
+ * **Note**: This script does not automatically track token count natively since
+ * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
+ *
+ * @extends {TinyAiInstanceCore2<SessionData>}
+ */
+export class TinyAiInstance2 extends TinyAiInstanceCore2 {
+  /**
+   * Creates an instance of the TinyAiInstance2 class.
+   *
+   * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
+   */
+  constructor(isSingle = false) {
+    super(isSingle);
+  }
+}

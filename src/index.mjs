@@ -1,4 +1,4 @@
-import TinyAiInstance2 from './TinyAiInstance2.mjs';
+import { TinyAiInstance2, TinyAiInstanceCore2 } from './TinyAiInstance2.mjs';
 
 import {
   checkObj as checkAiObj,
@@ -11,6 +11,7 @@ import {
 
 export {
   TinyAiInstance2,
+  TinyAiInstanceCore2,
   checkAiObj,
   cloneAiObjTypeOrder,
   extendAiObjType,
