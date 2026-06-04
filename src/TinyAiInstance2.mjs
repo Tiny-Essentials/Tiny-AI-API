@@ -395,12 +395,14 @@ class TinyAiInstance2 extends EventEmitter {
     const type = value !== null ? (objType(value)?.toString() ?? '') : '';
 
     if (id === 'ROOT') {
-      if (value === null)
+      // Allows null in ROOT ONLY if a customValidator is provided to secure future assignments
+      if (value === null && !customValidator)
         throw new Error(
-          'ROOT custom values cannot be null! Use eraseCustomValue to remove them completely.',
+          'ROOT custom values cannot be null unless a customValidator is provided! Use eraseCustomValue to remove them completely.',
         );
 
-      if (customValidator && !customValidator(value)) {
+      // Only validate against the function if the value is not null during ROOT initialization
+      if (value !== null && customValidator && !customValidator(value)) {
         throw new Error(`ROOT custom value validation failed for '${name}'.`);
       }
 
@@ -408,8 +410,16 @@ class TinyAiInstance2 extends EventEmitter {
 
       // Update the #defaultSessionData to persist this root value to future sessions
       this.#defaultSessionData[name] = value;
-      this.#defaultSessionData.hash[name] = objHash(value);
-      if (typeof tokenAmount === 'number') this.#defaultSessionData.tokens[name] = tokenAmount;
+      
+      if (value !== null) {
+        this.#defaultSessionData.hash[name] = objHash(value);
+      } else {
+        delete this.#defaultSessionData.hash[name];
+      }
+      
+      if (typeof tokenAmount === 'number') {
+        this.#defaultSessionData.tokens[name] = tokenAmount;
+      }
 
       /** @type {CustomValueDefinition|undefined} - Pointer to existing root custom list definition */
       // @ts-ignore
@@ -437,7 +447,13 @@ class TinyAiInstance2 extends EventEmitter {
         if (typeof history[name] === 'undefined' || history[name] === null) {
           // @ts-ignore
           history[name] = value;
-          history.hash[name] = objHash(value);
+          
+          if (value !== null) {
+            history.hash[name] = objHash(value);
+          } else {
+            delete history.hash[name];
+          }
+          
           if (typeof tokenAmount === 'number') history.tokens[name] = tokenAmount;
         }
       }
