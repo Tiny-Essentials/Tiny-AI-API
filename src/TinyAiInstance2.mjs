@@ -1468,6 +1468,40 @@ export class TinyAiInstanceCore2 extends EventEmitter {
   }
 
   /**
+   * Sets the next available ID for the session history.
+   * Ensures that the new nextId is not greater than the last registered ID in the system.
+   *
+   * @param {number} value - The new ID value to be set.
+   * @param {string} [id] - The session ID. If omitted, the currently selected session will be used.
+   * @throws {TypeError} If the value is not a valid, finite, positive number.
+   * @throws {Error} If the provided value is greater than the last registered ID.
+   */
+  setNextId(value, id) {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+      throw new TypeError('Invalid nextId value! Must be a positive finite number.');
+    }
+
+    const selectedId = this.getId(id);
+    if (!selectedId) throw new Error('Invalid id!');
+    const history = this.getData(selectedId);
+
+    /**
+     * The highest ID currently stored in the session history, defaulting to 0 if empty.
+     */
+    const lastRegisteredId = history.ids.length > 0 ? Math.max(...history.ids) : 0;
+
+    if (history.ids.length > 0 && value > lastRegisteredId)
+      throw new Error(
+        `The provided nextId (${value}) cannot be greater than the last registered ID (${lastRegisteredId}).`,
+      );
+    else if (history.ids.length === 0 && value > 0)
+      throw new Error('Cannot set nextId greater than 0 when the session history is empty.');
+
+    history.nextId = value;
+    this.emit('setNextId', value, selectedId);
+  }
+
+  /**
    * Destroys the instance by clearing history and removing all event listeners.
    *
    * @returns {void}
