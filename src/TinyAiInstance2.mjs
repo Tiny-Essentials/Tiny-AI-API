@@ -112,6 +112,10 @@ import { cloneDeep } from 'lodash';
  */
 
 /**
+ * @typedef {SessionData & Record<string, any>} DefaultSessionData
+ */
+
+/**
  * Tiny AI Server Communication API Core (OpenAI Standard)
  * -----------------------------
  * This class manages AI session data natively using the OpenAI API structure.
@@ -121,7 +125,7 @@ import { cloneDeep } from 'lodash';
  * **Note**: This script does not automatically track token count natively since
  * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
  *
- * @template {SessionData & Record<string, any>} T
+ * @template {DefaultSessionData} T
  */
 export class TinyAiInstanceCore2 extends EventEmitter {
   #destroyed = false;
@@ -209,8 +213,8 @@ export class TinyAiInstanceCore2 extends EventEmitter {
    * Creates an instance of the TinyAiInstance2Core class.
    *
    * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
-   * @param {T} [modData]
-   * @param {Record<string, CustomValidatorFunction>} [modValidators]
+   * @param {T} [modData] - The initial modification data for the session.
+   * @param {Record<string, CustomValidatorFunction>} [modValidators] - Custom validation functions.
    */
   constructor(isSingle = false, modData = undefined, modValidators = undefined) {
     super();
@@ -1513,6 +1517,7 @@ export class TinyAiInstanceCore2 extends EventEmitter {
       for (const id of this.#history.keys()) this.stopDataId(id);
     } else this.stopDataId('main');
     this.#customValues.clear();
+    this.#defaultSessionData = {};
     this.removeAllListeners();
   }
 }
