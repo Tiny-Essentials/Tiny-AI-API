@@ -1,7 +1,7 @@
 import objHash from 'object-hash';
 import { EventEmitter } from 'events';
 import { encode as encodeBase64 } from 'js-base64';
-import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
+import { isJsonObject, objType } from '../tiny-modules/basics/objFilter.mjs';
 
 /**
  * @typedef {Object} SessionDataContent

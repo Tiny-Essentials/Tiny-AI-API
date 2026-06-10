@@ -12,12 +12,12 @@
       "import": "./dist/index.mjs"
     },
     "./TinyAiInstance": {
-      "require": "./dist/TinyAiInstance.cjs",
-      "import": "./dist/TinyAiInstance.mjs"
+      "require": "./dist/legacy/TinyAiInstance.cjs",
+      "import": "./dist/legacy/TinyAiInstance.mjs"
     },
-    "./services/legacy/Google": {
-      "require": "./dist/services/legacy/Google.cjs",
-      "import": "./dist/services/legacy/Google.mjs"
+    "./legacy/services/Google": {
+      "require": "./dist/legacy/services/Google.cjs",
+      "import": "./dist/legacy/services/Google.mjs"
     },
     "./TinyAiInstance2": {
       "require": "./dist/TinyAiInstance2.cjs",
