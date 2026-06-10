@@ -19,9 +19,9 @@
       "require": "./dist/legacy/services/Google.cjs",
       "import": "./dist/legacy/services/Google.mjs"
     },
-    "./TinyAiInstance2": {
-      "require": "./dist/TinyAiInstance2.cjs",
-      "import": "./dist/TinyAiInstance2.mjs"
+    "./TinyAiInstance2Core": {
+      "require": "./dist/TinyAiInstance2Core.cjs",
+      "import": "./dist/TinyAiInstance2Core.mjs"
     },
     "./services/VanillaAiContentData": {
       "require": "./dist/services/VanillaAiContentData.cjs",

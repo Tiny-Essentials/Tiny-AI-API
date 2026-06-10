@@ -1,4 +1,4 @@
-import TinyAiInstance2Core from './Core.mjs';
+import TinyAiInstance2Core from './TinyAiInstance2Core.mjs';
 
 import {
   checkObj as checkAiObj,
