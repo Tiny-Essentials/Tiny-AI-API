@@ -11,7 +11,7 @@
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
     },
-    "./TinyAiInstance": {
+    "./legacy/TinyAiInstance": {
       "require": "./dist/legacy/TinyAiInstance.cjs",
       "import": "./dist/legacy/TinyAiInstance.mjs"
     },
@@ -22,6 +22,10 @@
     "./TinyAiInstance2": {
       "require": "./dist/TinyAiInstance2.cjs",
       "import": "./dist/TinyAiInstance2.mjs"
+    },
+    "./services/VanillaAiContentData": {
+      "require": "./dist/services/VanillaAiContentData.cjs",
+      "import": "./dist/services/VanillaAiContentData.mjs"
     },
     "./utils/errorCodes": {
       "require": "./dist/utils/errorCodes.cjs",

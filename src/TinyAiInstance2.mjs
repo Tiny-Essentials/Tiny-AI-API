@@ -1,11 +1,11 @@
 import objHash from 'object-hash';
 import { EventEmitter } from 'events';
-import { encode as encodeBase64 } from 'js-base64';
-import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
 import { cloneDeep } from 'lodash';
+import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
+import { imageToBase64, validateAIContentData } from './services/VanillaAiContentData.mjs';
 
 /**
- * @typedef {SessionData & Record<string, any>} DefaultSessionData
+ * @typedef {import('./services/VanillaAiContentData.mjs').AIContentData} AIContentData
  */
 
 /**
@@ -35,9 +35,10 @@ import { cloneDeep } from 'lodash';
  */
 
 /**
+ * @template {Record<any,any>} AICData
  * @typedef {Object} SessionDataContent
  * @property {number} nextId - The next available unique ID for a new message in the sequence.
- * @property {AIContentData[]} data - Array of content data entries in the session.
+ * @property {AICData[]} data - Array of content data entries in the session.
  * @property {number[]} ids - Array of unique IDs corresponding to the content data.
  * @property {{ data: Array<TokenCount>; [key: string]: any }} tokens - Token usage data categorized by message/field.
  * @property {{ data: Array<string>; [key: string]: any }} hash - Hash values for content data entries.
@@ -58,54 +59,9 @@ import { cloneDeep } from 'lodash';
  */
 
 /**
- * @typedef {Record<string, any> & SessionDataContent} SessionData
+ * @template {Record<any,any>} AICData
+ * @typedef {Record<string, any> & SessionDataContent<AICData>} SessionData
  * Represents the complete session data, combining base content and dynamic fields.
- */
-
-/**
- * @typedef {Object} AIContentTextInput
- * @property {'text'} type - The type of input.
- * @property {string} text - The raw text content.
- * Represents a text input structure for AI content.
- */
-
-/**
- * @typedef {Object} AIContentImageInput
- * @property {'image_url'} type - The type of input.
- * @property {Object} image_url - The object containing image data.
- * @property {string} [image_url.url] - The data URI or URL of the image.
- * @property {string} [image_url.data] - The raw base64 data of the image.
- * Represents an image input structure for AI content.
- */
-
-/**
- * @typedef {string|[AIContentTextInput,...AIContentImageInput[]]} AIContentInput
- * Represents the valid input types for AI content, which can be a string or a mix of text and image objects.
- */
-
-/**
- * @typedef {Object} AIToolCall
- * @property {string} id - Unique ID for the tool call.
- * @property {string} type - The type of the tool call (e.g., 'function', 'custom_tool_call', 'tool_search_call').
- * @property {string} [call_id] - A specific reference call identifier for handling results.
- * @property {string} [name] - The name of the tool called.
- * @property {Object} [function] - Details about the standard function to be called.
- * @property {string} function.name - The target function name.
- * @property {string} function.arguments - Stringified JSON arguments for the function.
- * @property {string} [input] - Plain text input generated for custom tools.
- * @property {string} [status] - The execution status, primarily used for custom or deferred tool calls.
- * Represents a specific tool execution request made by the AI model.
- */
-
-/**
- * @typedef {Object} AIContentData
- * @property {AIContentInput} [content] - The input content (text or image).
- * @property {string} role - The role of the message ('user', 'assistant', 'system', 'tool').
- * @property {string|number} [finishReason] - The reason the generation stopped.
- * @property {AIToolCall[]} [tool_calls] - Array of tool calls requested by the model.
- * @property {string} [tool_call_id] - The ID of a specific tool call (used when role is 'tool' for function outputs).
- * @property {string} [name] - The name of the content/message or function.
- * The standardized object format representing a single interaction or message in the AI session.
  */
 
 /**
@@ -125,7 +81,7 @@ import { cloneDeep } from 'lodash';
  * **Note**: This script does not automatically track token count natively since
  * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
  *
- * @template {DefaultSessionData} T
+ * @template {Record<any,any>} AICData
  */
 export class TinyAiInstance2Core extends EventEmitter {
   #destroyed = false;
@@ -148,9 +104,9 @@ export class TinyAiInstance2Core extends EventEmitter {
     return this.#customValues.size;
   }
 
-  /** @type {Map<string, T>} */ #history = new Map();
+  /** @type {Map<string, SessionData<AICData>>} */ #history = new Map();
 
-  /** @returns {Record<string, T>} */
+  /** @returns {Record<string, SessionData<AICData>>} */
   get history() {
     return Object.fromEntries(this.#history);
   }
@@ -190,30 +146,10 @@ export class TinyAiInstance2Core extends EventEmitter {
   }
 
   /**
-   * Sets file data natively formatted for OpenAI Vision APIs.
-   * Converts plain data into an image URI structure.
-   *
-   * @param {string} mime - The MIME type of the file (e.g., 'image/jpeg').
-   * @param {string} data - The file content (base64 or string).
-   * @param {boolean} [isBase64=false] - Whether data is already base64 encoded.
-   * @returns {AIContentImageInput} The formatted image input object.
-   */
-  static imageToBase64(mime, data, isBase64 = false) {
-    if (typeof mime !== 'string' || typeof data !== 'string')
-      throw new TypeError('Invalid input! Mime and data must be strings.');
-    return {
-      type: 'image_url',
-      image_url: {
-        url: `data:${mime};base64,${!isBase64 ? encodeBase64(data) : data}`,
-      },
-    };
-  }
-
-  /**
    * Creates an instance of the TinyAiInstance2Core class.
    *
    * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
-   * @param {T} [modData] - The initial modification data for the session.
+   * @param {SessionData<AICData>} [modData] - The initial modification data for the session.
    * @param {Record<string, CustomValidatorFunction>} [modValidators] - Custom validation functions.
    */
   constructor(isSingle = false, modData = undefined, modValidators = undefined) {
@@ -269,84 +205,20 @@ export class TinyAiInstance2Core extends EventEmitter {
    * Creates the default session data structure.
    * Uses deep cloning to prevent shared references in arrays and objects.
    *
-   * @returns {T} The initialized session data.
+   * @returns {SessionData<AICData>} The initialized session data.
    */
   _createDefaultSessionData() {
     return cloneDeep(this.#defaultSessionData);
   }
 
   /**
-   * Strictly validates an AIContentData object to ensure it conforms to the OpenAI API standard.
+   * Strictly validates an AIContentData object to ensure it conforms to the API standard.
    *
-   * @param {AIContentData} data - The object to validate.
+   * @param {AICData} data - The object to validate.
    * @throws {TypeError} If the object fails schema validation.
    */
   _validateAIContentData(data) {
-    if (!isJsonObject(data)) throw new TypeError('Data must be a valid JSON object.');
-    if (typeof data.role !== 'string')
-      throw new TypeError('Property "role" is required and must be a string.');
-
-    if ('content' in data && data.content !== undefined && data.content !== null) {
-      if (typeof data.content !== 'string' && !Array.isArray(data.content)) {
-        throw new TypeError(
-          'Property "content" must be a string or an array of valid AIContentInput objects.',
-        );
-      }
-      if (Array.isArray(data.content)) {
-        for (const item of data.content) {
-          if (!isJsonObject(item)) throw new TypeError('Content array items must be objects.');
-          if (item.type === 'text') {
-            if (typeof item.text !== 'string')
-              throw new TypeError('AIContentTextInput must have a "text" string property.');
-          } else if (item.type === 'image_url') {
-            if (!isJsonObject(item.image_url))
-              throw new TypeError('AIContentImageInput must have an "image_url" object.');
-          } else {
-            throw new TypeError(
-              'Content array item must have a valid "type" ("text" or "image_url").',
-            );
-          }
-        }
-      }
-    }
-
-    if ('tool_calls' in data && data.tool_calls !== undefined) {
-      if (!Array.isArray(data.tool_calls))
-        throw new TypeError('Property "tool_calls" must be an array.');
-      for (const tool of data.tool_calls) {
-        if (!isJsonObject(tool)) throw new TypeError('Tool calls must be objects.');
-        if (typeof tool.id !== 'string') throw new TypeError('Tool call must have a string "id".');
-        if (typeof tool.type !== 'string')
-          throw new TypeError('Tool call must have a string "type".');
-        if ('function' in tool && tool.function !== undefined) {
-          if (!isJsonObject(tool.function))
-            throw new TypeError('Tool call "function" must be an object.');
-          if (typeof tool.function.name !== 'string')
-            throw new TypeError('Tool call function must have a "name" string.');
-          if (typeof tool.function.arguments !== 'string')
-            throw new TypeError('Tool call function must have "arguments" as a JSON string.');
-        }
-      }
-    }
-
-    if (
-      'tool_call_id' in data &&
-      data.tool_call_id !== undefined &&
-      typeof data.tool_call_id !== 'string'
-    ) {
-      throw new TypeError('Property "tool_call_id" must be a string.');
-    }
-    if ('name' in data && data.name !== undefined && typeof data.name !== 'string') {
-      throw new TypeError('Property "name" must be a string.');
-    }
-    if (
-      'finishReason' in data &&
-      data.finishReason !== undefined &&
-      typeof data.finishReason !== 'string' &&
-      typeof data.finishReason !== 'number'
-    ) {
-      throw new TypeError('Property "finishReason" must be a string or number.');
-    }
+    return;
   }
 
   /**
@@ -981,7 +853,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    * Get the data associated with a specific session history ID.
    *
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @returns {T} The data associated with the session ID, or `null` if no data exists for that ID.
+   * @returns {SessionData<AICData>} The data associated with the session ID, or `null` if no data exists for that ID.
    */
   getData(id) {
     const selectedId = this.getId(id);
@@ -1074,7 +946,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    *
    * @param {number} index - The index of the data entry to retrieve.
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @returns {AIContentData} The data entry at the specified index.
+   * @returns {AICData} The data entry at the specified index.
    */
   getMsgByIndex(index, id) {
     if (!this.indexExists(index, id))
@@ -1087,7 +959,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    *
    * @param {number} msgId - The ID of the message to retrieve.
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @returns {AIContentData} The message data associated with the given ID.
+   * @returns {AICData} The message data associated with the given ID.
    */
   getMsgById(msgId, id) {
     return this.getData(id).data[this.getIndexOfId(msgId)];
@@ -1183,7 +1055,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    * Replaces an entry at the specified index in the session history with new data.
    *
    * @param {number} index - The index of the entry to replace.
-   * @param {AIContentData} [data] - The new data to replace the existing entry (optional).
+   * @param {AICData} [data] - The new data to replace the existing entry (optional).
    * @param {TokenCount} [tokens] - The token count associated with the new entry (optional).
    * @param {string} [id] - The session ID (optional). If omitted, the currently selected session history ID will be used.
    * @returns {boolean} `true` if the entry was successfully replaced, `false` if the entry does not exist.
@@ -1224,7 +1096,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    * Retrieve the data of the last entry in the session history.
    *
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @returns {AIContentData} The data of the last entry in the session history.
+   * @returns {AICData} The data of the last entry in the session history.
    */
   getLastIndexData(id) {
     if (!this.existsFirstIndex(id))
@@ -1248,7 +1120,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    * Retrieve the first entry in the session history.
    *
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @returns {AIContentData} The first entry of the session history.
+   * @returns {AICData} The first entry of the session history.
    */
   getFirstIndexData(id) {
     if (!this.existsFirstIndex(id))
@@ -1259,7 +1131,7 @@ export class TinyAiInstance2Core extends EventEmitter {
   /**
    * Adds new data to the selected session history. Strict validation is applied to ensure data integrity.
    *
-   * @param {AIContentData} data - The data to be added to the session history.
+   * @param {AICData} data - The data to be added to the session history.
    * @param {TokenCount} [tokenData={count: null}] - Optional token-related data to be associated with the new entry.
    * @param {string} [id] - The session history ID. If omitted, the currently selected session ID will be used.
    * @returns {number} The new ID of the added data entry.
@@ -1434,7 +1306,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    *
    * @param {string} id - The session ID for the new data session.
    * @param {boolean} [selected=false] - A flag to indicate whether this session should be selected as the active session.
-   * @returns {T} The newly created session data.
+   * @returns {SessionData<AICData>} The newly created session data.
    */
   startDataId(id, selected = false) {
     if (this.#destroyed)
@@ -1532,7 +1404,7 @@ export class TinyAiInstance2Core extends EventEmitter {
  * **Note**: This script does not automatically track token count natively since
  * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
  *
- * @extends {TinyAiInstance2Core<SessionData>}
+ * @extends {TinyAiInstance2Core<AIContentData>}
  */
 export class TinyAiInstance2 extends TinyAiInstance2Core {
   /**
@@ -1542,5 +1414,28 @@ export class TinyAiInstance2 extends TinyAiInstance2Core {
    */
   constructor(isSingle = false) {
     super(isSingle);
+  }
+
+  /**
+   * Sets file data natively formatted for OpenAI Vision APIs.
+   * Converts plain data into an image URI structure.
+   *
+   * @param {string} mime - The MIME type of the file (e.g., 'image/jpeg').
+   * @param {string} data - The file content (base64 or string).
+   * @param {boolean} [isBase64=false] - Whether data is already base64 encoded.
+   * @returns {import('./services/VanillaAiContentData.mjs').AIContentImageInput} The formatted image input object.
+   */
+  static imageToBase64(mime, data, isBase64 = false) {
+    return imageToBase64(mime, data, isBase64);
+  }
+
+  /**
+   * Strictly validates an AIContentData object to ensure it conforms to the OpenAI API standard.
+   *
+   * @param {AIContentData} data - The object to validate.
+   * @throws {TypeError} If the object fails schema validation.
+   */
+  _validateAIContentData(data) {
+    return validateAIContentData(data);
   }
 }
