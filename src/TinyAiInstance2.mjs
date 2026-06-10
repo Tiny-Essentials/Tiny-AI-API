@@ -5,6 +5,10 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
 import { cloneDeep } from 'lodash';
 
 /**
+ * @typedef {SessionData & Record<string, any>} DefaultSessionData
+ */
+
+/**
  * @callback CustomValidatorFunction
  * @param {*} value - The value to validate.
  * @returns {boolean} True if valid, false otherwise.
@@ -112,10 +116,6 @@ import { cloneDeep } from 'lodash';
  */
 
 /**
- * @typedef {SessionData & Record<string, any>} DefaultSessionData
- */
-
-/**
  * Tiny AI Server Communication API Core (OpenAI Standard)
  * -----------------------------
  * This class manages AI session data natively using the OpenAI API structure.
@@ -127,7 +127,7 @@ import { cloneDeep } from 'lodash';
  *
  * @template {DefaultSessionData} T
  */
-export class TinyAiInstanceCore2 extends EventEmitter {
+export class TinyAiInstance2Core extends EventEmitter {
   #destroyed = false;
 
   get destroyed() {
@@ -1532,9 +1532,9 @@ export class TinyAiInstanceCore2 extends EventEmitter {
  * **Note**: This script does not automatically track token count natively since
  * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
  *
- * @extends {TinyAiInstanceCore2<SessionData>}
+ * @extends {TinyAiInstance2Core<SessionData>}
  */
-export class TinyAiInstance2 extends TinyAiInstanceCore2 {
+export class TinyAiInstance2 extends TinyAiInstance2Core {
   /**
    * Creates an instance of the TinyAiInstance2 class.
    *
