@@ -27,6 +27,14 @@
       "require": "./dist/services/VanillaAiContentData.cjs",
       "import": "./dist/services/VanillaAiContentData.mjs"
     },
+    "./plugins/AiFileDataPlugin": {
+      "require": "./dist/plugins/AiFileDataPlugin.cjs",
+      "import": "./dist/plugins/AiFileDataPlugin.mjs"
+    },
+    "./plugins/VanillaInstance": {
+      "require": "./dist/plugins/VanillaInstance.cjs",
+      "import": "./dist/plugins/VanillaInstance.mjs"
+    },
     "./utils/errorCodes": {
       "require": "./dist/utils/errorCodes.cjs",
       "import": "./dist/utils/errorCodes.mjs"
