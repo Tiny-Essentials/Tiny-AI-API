@@ -15,10 +15,10 @@ This documentation is designed to provide all the information you need to get up
 
 ### Table of Contents
 
-- [Introduction](./introduction.md) - Get started with the basic setup and first steps.
-- [Configs](./configs.md) - Session configuration settings and management.
-- [Content](./content.md) - Manage session content, including prompts, dialogues, and files.
-- [Custom](./custom.md) - Working with custom values and user-specific configurations.
+- [Introduction](./deprecated/introduction.md) - Get started with the basic setup and first steps.
+- [Configs](./deprecated/configs.md) - Session configuration settings and management.
+- [Content](./deprecated/content.md) - Manage session content, including prompts, dialogues, and files.
+- [Custom](./deprecated/custom.md) - Working with custom values and user-specific configurations.
 
 ---
 
