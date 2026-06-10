@@ -46,7 +46,7 @@
   },
   "repository": "https://github.com/Tiny-Essentials/Tiny-AI-API.git",
   "author": "Yasmin Seidel (JasminDreasond)",
-  "license": "AGPL-3.0-only",
+  "license": "LGPL-3.0-only",
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",
     "ai": "^6.0.193",
