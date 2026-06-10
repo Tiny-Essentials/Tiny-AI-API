@@ -1,4 +1,4 @@
-import { TinyAiInstance2Core } from '../TinyAiInstance2.mjs';
+import TinyAiInstance2Core from '../Core.mjs';
 import { imageToBase64, validateAIContentData } from '../services/VanillaAiContentData.mjs';
 
 /**
@@ -6,7 +6,7 @@ import { imageToBase64, validateAIContentData } from '../services/VanillaAiConte
  */
 
 /**
- * @typedef {import('../TinyAiInstance2.mjs').SessionData<AIContentData>} SessionData
+ * @typedef {import('../Core.mjs').SessionData<AIContentData>} SessionData
  */
 
 /**

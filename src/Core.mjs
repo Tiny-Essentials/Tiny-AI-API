@@ -75,7 +75,7 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * @template {Record<any,any>} AICData
  * @template {SessionData<AICData>} SessionTemplate
  */
-export class TinyAiInstance2Core extends EventEmitter {
+class TinyAiInstance2Core extends EventEmitter {
   #destroyed = false;
 
   get destroyed() {
@@ -1385,3 +1385,5 @@ export class TinyAiInstance2Core extends EventEmitter {
     this.removeAllListeners();
   }
 }
+
+export default TinyAiInstance2Core;
