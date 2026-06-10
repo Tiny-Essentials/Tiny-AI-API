@@ -6,6 +6,10 @@ import { imageToBase64, validateAIContentData } from '../services/VanillaAiConte
  */
 
 /**
+ * @typedef {import('../TinyAiInstance2.mjs').SessionData<AIContentData>} SessionData
+ */
+
+/**
  * Tiny AI Server Communication API (OpenAI Standard)
  * -----------------------------
  * This class manages AI session data natively using the OpenAI API structure.
@@ -15,7 +19,7 @@ import { imageToBase64, validateAIContentData } from '../services/VanillaAiConte
  * **Note**: This script does not automatically track token count natively since
  * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
  *
- * @extends {TinyAiInstance2Core<AIContentData>}
+ * @extends {TinyAiInstance2Core<AIContentData, SessionData>}
  */
 class TinyAiInstance2 extends TinyAiInstance2Core {
   /**

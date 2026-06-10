@@ -7,7 +7,7 @@ const AiFileDataPlugin = {
   apply: (Base) =>
     /**
      * @template {Record<any,any>} AICData
-     * @extends {TinyAiInstance2Core<AICData>}
+     * @extends {TinyAiInstance2Core<AICData, SessionData>}
      */
     class TinyAiInstance2FileData extends Base {
       /** @typedef {import('../TinyAiInstance2.mjs').SessionData<AICData>} SessionData */

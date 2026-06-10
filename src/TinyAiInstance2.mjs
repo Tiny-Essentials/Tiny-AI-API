@@ -73,6 +73,7 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * **Note**: This script does not automatically track token count natively.
  *
  * @template {Record<any,any>} AICData
+ * @template {SessionData<AICData>} SessionTemplate
  */
 export class TinyAiInstance2Core extends EventEmitter {
   #destroyed = false;
@@ -95,9 +96,9 @@ export class TinyAiInstance2Core extends EventEmitter {
     return this.#customValues.size;
   }
 
-  /** @type {Map<string, SessionData<AICData>>} */ #history = new Map();
+  /** @type {Map<string, SessionTemplate>} */ #history = new Map();
 
-  /** @returns {Record<string, SessionData<AICData>>} */
+  /** @returns {Record<string, SessionTemplate>} */
   get history() {
     return Object.fromEntries(this.#history);
   }
@@ -140,7 +141,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    * Creates an instance of the TinyAiInstance2Core class.
    *
    * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
-   * @param {SessionData<AICData>} [modData] - The initial modification data for the session.
+   * @param {SessionTemplate} [modData] - The initial modification data for the session.
    * @param {Record<string, CustomValidatorFunction>} [modValidators] - Custom validation functions.
    */
   constructor(isSingle = false, modData = undefined, modValidators = undefined) {
@@ -196,7 +197,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    * Creates the default session data structure.
    * Uses deep cloning to prevent shared references in arrays and objects.
    *
-   * @returns {SessionData<AICData>} The initialized session data.
+   * @returns {SessionTemplate} The initialized session data.
    */
   _createDefaultSessionData() {
     return cloneDeep(this.#defaultSessionData);
@@ -844,7 +845,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    * Get the data associated with a specific session history ID.
    *
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @returns {SessionData<AICData>} The data associated with the session ID, or `null` if no data exists for that ID.
+   * @returns {SessionTemplate} The data associated with the session ID, or `null` if no data exists for that ID.
    */
   getData(id) {
     const selectedId = this.getId(id);
@@ -1297,7 +1298,7 @@ export class TinyAiInstance2Core extends EventEmitter {
    *
    * @param {string} id - The session ID for the new data session.
    * @param {boolean} [selected=false] - A flag to indicate whether this session should be selected as the active session.
-   * @returns {SessionData<AICData>} The newly created session data.
+   * @returns {SessionTemplate} The newly created session data.
    */
   startDataId(id, selected = false) {
     if (this.#destroyed)
