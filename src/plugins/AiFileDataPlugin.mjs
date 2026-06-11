@@ -1,15 +1,14 @@
 import TinyAiInstance2Core from '../TinyAiInstance2Core.mjs';
 
-const AiFileDataPlugin = {
-  name: 'FileData',
-  dependencies: [],
+const AiFileDataPlugin =
   /** @param {typeof TinyAiInstance2Core} Base */
-  apply: (Base) =>
+  (Base) =>
     /**
      * @template {Record<any,any>} AICData
      * @extends {TinyAiInstance2Core<AICData, SessionData>}
      */
     class TinyAiInstance2FileData extends Base {
+      static _tinyDepName = 'FileData';
       /** @typedef {import('../TinyAiInstance2Core.mjs').SessionData<AICData>} SessionData */
       /**
        * Creates an instance of the TinyAiInstance2FileData class.
@@ -21,7 +20,6 @@ const AiFileDataPlugin = {
       constructor(isSingle = false, modData = undefined, modValidators = undefined) {
         super(isSingle, modData, modValidators);
       }
-    },
-};
+    };
 
 export default AiFileDataPlugin;
