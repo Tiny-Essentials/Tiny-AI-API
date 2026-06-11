@@ -1,3 +1,3 @@
-import { TinyAiInstance, setTinyGoogleAi, TinyGoogleAi } from '../dist';
+import { TinyAiInstance2Core } from '../dist';
 
-console.log(TinyAiInstance, TinyGoogleAi, setTinyGoogleAi);
+console.log(TinyAiInstance2Core);

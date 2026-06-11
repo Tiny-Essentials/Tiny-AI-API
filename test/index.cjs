@@ -1,3 +1,3 @@
-const { TinyAiInstance, TinyGoogleAi, setTinyGoogleAi } = require('../dist/index.cjs');
+const { TinyAiInstance2Core } = require('../dist/index.cjs');
 
-console.log(TinyAiInstance, TinyGoogleAi, setTinyGoogleAi);
+console.log(TinyAiInstance2Core);

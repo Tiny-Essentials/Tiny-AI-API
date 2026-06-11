@@ -83,7 +83,7 @@
     "fix:prettier": "prettier --write ./src/* && prettier --write ./test/*&& prettier --write ./build/*",
     "auto-build": "npm run build",
     "build": "npm run build:essentials && tsc -p tsconfig.json && rollup -c",
-    "build:essentials": "npx tiny-essentials-fork --out-dir=src/tiny-modules basics/objFilter basics/objChecker libs/TinyMamdaniInferenceSystem libs/TinyEvents",
+    "build:essentials": "npx tiny-essentials-fork --out-dir=src/tiny-modules basics/objFilter basics/objChecker libs/TinyMamdaniInferenceSystem libs/TinyEvents libs/TinyClassManager",
     "build-clean": "npm run clean && npm run build",
     "build-dist": "npm run build",
     "build-browserify": "npx browserify build/browserify.js -p esmify > dist/TinyAiApi.web.js",
