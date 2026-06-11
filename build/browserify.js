@@ -1,6 +1,5 @@
-import { TinyAiInstance2, TinyAiInstance2Core } from '../src/TinyAiInstance2.mjs';
+import TinyAiInstance2Core from '../src/TinyAiInstance2Core.mjs';
 
 global.window.TinyAiApi = {
-  TinyAiInstance2,
   TinyAiInstance2Core,
 };
