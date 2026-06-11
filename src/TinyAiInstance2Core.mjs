@@ -1,4 +1,4 @@
-import objHash from 'object-hash';
+import objectHash from 'object-hash';
 import { cloneDeep } from 'lodash';
 import TinyEvents from './tiny-modules/libs/TinyEvents.mjs';
 import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
@@ -42,7 +42,6 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * @property {string|null} model - The currently selected AI model identifier.
  * @property {string|string[]|null} stop - Stop sequences for generation to halt text output.
  * @property {string|null} prompt - The primary prompt data of the session.
- * @property {string|null} firstDialogue - The first dialogue initialization data of the session.
  * @property {number|null} repeatPenalty - Penalty applied to repeated tokens to prevent looping.
  * @property {number|null} frequencyPenalty - Penalty applied to frequent tokens to encourage variety.
  * @property {number|null} presencePenalty - Penalty applied to tokens based on their presence in the context.
@@ -141,7 +140,7 @@ class TinyAiInstance2Core extends TinyEvents {
    * Creates an instance of the TinyAiInstance2Core class.
    *
    * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
-   * @param {SessionTemplate} [modData] - The initial modification data for the session.
+   * @param {Partial<SessionTemplate>} [modData] - The initial modification data for the session.
    * @param {Record<string, CustomValidatorFunction>} [modValidators] - Custom validation functions.
    */
   constructor(isSingle = false, modData = undefined, modValidators = undefined) {
@@ -182,7 +181,6 @@ class TinyAiInstance2Core extends TinyEvents {
     model: null,
     stop: null,
     prompt: null,
-    firstDialogue: null,
     repeatPenalty: null,
     frequencyPenalty: null,
     presencePenalty: null,
@@ -280,7 +278,7 @@ class TinyAiInstance2Core extends TinyEvents {
       this.#defaultSessionData[name] = value;
 
       if (value !== null) {
-        this.#defaultSessionData.hash[name] = objHash(value);
+        this.#defaultSessionData.hash[name] = objectHash(value);
       } else {
         delete this.#defaultSessionData.hash[name];
       }
@@ -317,7 +315,7 @@ class TinyAiInstance2Core extends TinyEvents {
           history[name] = value;
 
           if (value !== null) {
-            history.hash[name] = objHash(value);
+            history.hash[name] = objectHash(value);
           } else {
             delete history.hash[name];
           }
@@ -379,7 +377,7 @@ class TinyAiInstance2Core extends TinyEvents {
     // Send custom value into the history
     if (value !== null) {
       this.#insertIntoHistory(selectedId, { [name]: value });
-      history.hash[name] = objHash(value);
+      history.hash[name] = objectHash(value);
     }
 
     // Complete
@@ -478,7 +476,7 @@ class TinyAiInstance2Core extends TinyEvents {
     if (rootDef) {
       // @ts-ignore
       history[name] = rootDef.value;
-      history.hash[name] = objHash(rootDef.value);
+      history.hash[name] = objectHash(rootDef.value);
       if (typeof rootDef.tokenAmount === 'number') {
         history.tokens[name] = rootDef.tokenAmount;
       } else {
@@ -1060,7 +1058,7 @@ class TinyAiInstance2Core extends TinyEvents {
       let hash = null;
       if (data) {
         this._validateAIContentData(data); // Ensures perfect structure conformity
-        hash = objHash(data);
+        hash = objectHash(data);
         history.data[index] = data;
         history.hash.data[index] = hash;
       }
@@ -1135,7 +1133,7 @@ class TinyAiInstance2Core extends TinyEvents {
 
     const newId = history.nextId;
     history.nextId++;
-    const hash = objHash(data);
+    const hash = objectHash(data);
 
     /** @type {TokenCount} - Token variable tracking output context structure mapped point variable item memory representation variable representation tracking payload context */
     const tokenContent = isJsonObject(tokenData)
@@ -1169,7 +1167,7 @@ class TinyAiInstance2Core extends TinyEvents {
     const history = typeof selectedId === 'string' ? this.#history.get(selectedId) : undefined;
     if (!history) throw new Error('Invalid history id data!');
 
-    const hash = objHash(promptData);
+    const hash = objectHash(promptData);
     history.prompt = promptData;
     history.hash.prompt = hash;
 
@@ -1185,41 +1183,6 @@ class TinyAiInstance2Core extends TinyEvents {
    */
   getPrompt(id) {
     return this.getData(id).prompt;
-  }
-
-  /**
-   * Sets the first dialogue for the selected session history.
-   *
-   * @param {string} dialogue - The dialogue to set as the first dialogue.
-   * @param {number} [tokenAmount] - The number of tokens associated with the dialogue (optional).
-   * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   */
-  setFirstDialogue(dialogue, tokenAmount, id) {
-    if (typeof dialogue !== 'string')
-      throw new TypeError('Invalid dialogue data type! Must be a string.');
-    if (tokenAmount !== undefined && typeof tokenAmount !== 'number')
-      throw new TypeError('Invalid token amount data type! Must be a number.');
-
-    const selectedId = this.getId(id);
-    const history = typeof selectedId === 'string' ? this.#history.get(selectedId) : undefined;
-    if (!history) throw new Error('Invalid history id data!');
-
-    const hash = objHash(dialogue);
-    history.firstDialogue = dialogue;
-    history.hash.firstDialogue = hash;
-
-    if (typeof tokenAmount === 'number') history.tokens.firstDialogue = tokenAmount;
-    this.emit('setFirstDialogue', dialogue, selectedId);
-  }
-
-  /**
-   * Retrieves the first dialogue from the selected session history.
-   *
-   * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @returns {string|null} The first dialogue if it exists and is a non-empty string, or null if no first dialogue is set.
-   */
-  getFirstDialogue(id) {
-    return this.getData(id).firstDialogue;
   }
 
   /**
@@ -1239,7 +1202,7 @@ class TinyAiInstance2Core extends TinyEvents {
     const history = typeof selectedId === 'string' ? this.#history.get(selectedId) : undefined;
     if (!history) throw new Error('Invalid history id data!');
 
-    const hash = objHash(data);
+    const hash = objectHash(data);
     history.systemInstruction = data;
     history.hash.systemInstruction = hash;
 

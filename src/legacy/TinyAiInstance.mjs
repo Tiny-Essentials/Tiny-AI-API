@@ -1,4 +1,4 @@
-import objHash from 'object-hash';
+import objectHash from 'object-hash';
 import { EventEmitter } from 'events';
 import { encode as encodeBase64 } from 'js-base64';
 import { isJsonObject, objType } from '../tiny-modules/basics/objFilter.mjs';
@@ -397,7 +397,7 @@ class TinyAiInstance {
         // Send custom value into the history
         if (value !== null) {
           this.#_insertIntoHistory(selectedId, sendValue);
-          this.history[selectedId].hash[name] = objHash(value);
+          this.history[selectedId].hash[name] = objectHash(value);
         }
 
         // Complete
@@ -1316,7 +1316,7 @@ class TinyAiInstance {
     if (history && history.data[index] && (data || tokens)) {
       let hash = null;
       if (data) {
-        hash = objHash(data);
+        hash = objectHash(data);
         history.data[index] = data;
         history.hash.data[index] = hash;
       }
@@ -1396,7 +1396,7 @@ class TinyAiInstance {
       if (typeof this.history[selectedId].nextId !== 'number') this.history[selectedId].nextId = 0;
       const newId = this.history[selectedId].nextId;
       this.history[selectedId].nextId++;
-      const hash = objHash(data);
+      const hash = objectHash(data);
 
       const tokenContent = isJsonObject(tokenData)
         ? tokenData
@@ -1425,7 +1425,7 @@ class TinyAiInstance {
     const selectedId = this.getId(id);
     if (selectedId && this.history[selectedId]) {
       if (typeof promptData === 'string') {
-        const hash = objHash(promptData);
+        const hash = objectHash(promptData);
         this.history[selectedId].prompt = promptData;
         this.history[selectedId].hash.prompt = hash;
       }
@@ -1469,7 +1469,7 @@ class TinyAiInstance {
     const selectedId = this.getId(id);
     if (selectedId && this.history[selectedId]) {
       if (typeof dialogue === 'string') {
-        const hash = objHash(dialogue);
+        const hash = objectHash(dialogue);
         this.history[selectedId].firstDialogue = dialogue;
         this.history[selectedId].hash.firstDialogue = hash;
       }
@@ -1522,7 +1522,7 @@ class TinyAiInstance {
           data,
           base64: !isBase64 ? encodeBase64(data) : data,
         };
-        hash = objHash(this.history[selectedId].file);
+        hash = objectHash(this.history[selectedId].file);
         this.history[selectedId].hash.file = hash;
       }
 
@@ -1586,7 +1586,7 @@ class TinyAiInstance {
     const selectedId = this.getId(id);
     if (selectedId && this.history[selectedId]) {
       if (typeof data === 'string') {
-        const hash = objHash(data);
+        const hash = objectHash(data);
         this.history[selectedId].systemInstruction = data;
         this.history[selectedId].hash.systemInstruction = hash;
       }

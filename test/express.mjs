@@ -174,8 +174,8 @@ const jsLoader = async (filePath, fileName, req, res) => {
     );
 
     code = code.replace(
-      `import { objHash } from 'object-hash';`,
-      `import objHash from 'object-hash';`,
+      `import { objectHash } from 'object-hash';`,
+      `import objectHash from 'object-hash';`,
     );
     res.type('application/javascript');
     res.send(code);
