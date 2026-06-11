@@ -1382,7 +1382,7 @@ class TinyAiInstance2Core extends TinyEvents {
     } else this.stopDataId('main');
     this.#customValues.clear();
     this.#defaultSessionData = {};
-    this.offAllTypes();
+    this.removeAllListeners();
   }
 }
 

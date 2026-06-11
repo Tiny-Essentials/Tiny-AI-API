@@ -10,7 +10,10 @@ import { imageToBase64, validateAIContentData } from '../services/VanillaAiConte
  */
 
 const VanillaInstance =
-  /** @param {typeof TinyAiInstance2Core} Base */
+  /**
+   * @template {typeof TinyAiInstance2Core|unknown} Base
+   * @param {Base} Base
+   */
   (Base) =>
     /**
      * Tiny AI Server Communication API (OpenAI Standard)
