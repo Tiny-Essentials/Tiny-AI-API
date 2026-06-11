@@ -8,6 +8,7 @@ import {
   objType as aiObjType,
   reorderObjTypeOrder as reorderAiObjTypeOrder,
 } from './tiny-modules/basics/objFilter.mjs';
+import TinyEvents from './tiny-modules/libs/TinyEvents.mjs';
 
 export {
   TinyAiInstance2Core,
@@ -17,4 +18,5 @@ export {
   getCheckAiObj,
   aiObjType,
   reorderAiObjTypeOrder,
+  TinyEvents,
 };

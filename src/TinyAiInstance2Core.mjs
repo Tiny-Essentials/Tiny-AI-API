@@ -1,6 +1,6 @@
 import objHash from 'object-hash';
-import { EventEmitter } from 'events';
 import { cloneDeep } from 'lodash';
+import TinyEvents from './tiny-modules/libs/TinyEvents.mjs';
 import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
 
 /**
@@ -75,7 +75,7 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * @template {Record<any,any>} AICData
  * @template {SessionData<AICData>} SessionTemplate
  */
-class TinyAiInstance2Core extends EventEmitter {
+class TinyAiInstance2Core extends TinyEvents {
   #destroyed = false;
 
   get destroyed() {
@@ -1382,7 +1382,7 @@ class TinyAiInstance2Core extends EventEmitter {
     } else this.stopDataId('main');
     this.#customValues.clear();
     this.#defaultSessionData = {};
-    this.removeAllListeners();
+    this.offAllTypes();
   }
 }
 
