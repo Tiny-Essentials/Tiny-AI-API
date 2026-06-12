@@ -1,4 +1,3 @@
-import objectHash from 'object-hash';
 import TinyAiInstance2Core from '../TinyAiInstance2Core.mjs';
 
 /**
@@ -8,37 +7,39 @@ import TinyAiInstance2Core from '../TinyAiInstance2Core.mjs';
 
 const AiFirstDialoguePlugin =
   /**
-   * @template {typeof TinyAiInstance2Core|unknown} Base
-   * @param {Base} Base
+   * @template {new (...args: any[]) => import('../TinyAiInstance2Core.mjs').default<any, any>} TBase
+   * @param {TBase} Base
    */
   (Base) =>
     /**
      * @template {Record<any,any>} AICData
-     * @extends {TinyAiInstance2Core<AICData, SessionFirstDialogue>}
+     * @template {SessionData & SessionFirstDialogueCore} SessionTemplate
+     * @extends {TBase<AICData, SessionTemplate>}
      */
     class TinyAiInstance2FirstDialogue extends Base {
       static _tinyDepName = 'FirstDialogue';
-      /**
-       * @typedef {import('../TinyAiInstance2Core.mjs').SessionData<AICData>} SessionData
-       * @typedef {SessionData & SessionFirstDialogueCore} SessionFirstDialogue
-       */
+      /** @typedef {import('../TinyAiInstance2Core.mjs').SessionData<AICData>} SessionData */
+
+      /////////////////////////////////////////////////////////////////////////////////////////////
 
       /**
        * Creates an instance of the TinyAiInstance2FirstDialogue class.
        *
        * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
-       * @param {Partial<SessionFirstDialogue>} [modData] - The initial modification data for the session.
+       * @param {Partial<SessionTemplate>} [modData] - The initial modification data for the session.
        * @param {Record<string, import("../TinyAiInstance2Core.mjs").CustomValidatorFunction>} [modValidators] - Custom validation functions.
        */
       constructor(isSingle = false, modData = undefined, modValidators = undefined) {
         super(
           isSingle,
+          // @ts-ignore
           {
             firstDialogue: null,
             ...modData,
           },
           {
             firstDialogue: (dialogue) => typeof dialogue !== 'string',
+            ...modValidators,
           },
         );
       }

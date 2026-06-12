@@ -4,8 +4,14 @@ import AiFirstDialoguePlugin from './AiFirstDialoguePlugin.mjs';
 import VanillaInstance from './VanillaInstance.mjs';
 
 const aiManager = new TinyClassManager(TinyAiInstance2Core);
+const buildReady = aiManager.insert(AiFirstDialoguePlugin).insert(VanillaInstance);
 
-const TinyAiInstance2 = aiManager.insert(AiFirstDialoguePlugin).insert(VanillaInstance).build();
+const tinyClass = buildReady.appliedPluginClasses[1];
+
+const TinyAiInstance2 = buildReady.build();
 
 const test = new TinyAiInstance2();
-const data = test.getLastIndexData();
+const contentData = test.getLastIndexData();
+const data = test.getData();
+test.getFirstDialogue();
+data.firstDialogue;
