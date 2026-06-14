@@ -1,5 +1,4 @@
 import objectHash from 'object-hash';
-import { cloneDeep } from 'lodash';
 import TinyEvents from './tiny-modules/libs/TinyEvents.mjs';
 import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
 
@@ -195,7 +194,7 @@ class TinyAiInstance2Core extends TinyEvents {
    * @returns {SessionData} The initialized session data.
    */
   _createDefaultSessionData() {
-    return cloneDeep(this.#defaultSessionData);
+    return structuredClone(this.#defaultSessionData);
   }
 
   /**
