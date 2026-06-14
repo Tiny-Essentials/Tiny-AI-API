@@ -21,5 +21,6 @@ const TinyAiInstance2 = buildReady.build();
 const test = new TinyAiInstance2();
 const contentData = test.getLastIndexData();
 const data = test.getData();
+// @ts-ignore
 test.getFirstDialogue();
 data.firstDialogue;

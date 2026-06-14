@@ -14,7 +14,7 @@ const AiFirstDialoguePlugin =
     /**
      * @template {Record<any,any>} AICData
      * @template {Record<any,any>} SessionTemplate
-     * @extends {TBase<AICData, SessionFirstDialogueCore & SessionTemplate>}
+     * @extends {TinyAiInstance2Core<AICData, SessionFirstDialogueCore & SessionTemplate>}
      */
     class TinyAiInstance2FirstDialogue extends Base {
       static _tinyDepName = 'FirstDialogue';
