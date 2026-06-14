@@ -53,12 +53,6 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  */
 
 /**
- * @template {Record<any,any>} AICData
- * @typedef {Record<string, any> & SessionDataContent<AICData>} SessionData
- * Represents the complete session data, combining base content and dynamic fields.
- */
-
-/**
  * @typedef {Object} TokenCount
  * @property {number|null} count - The amount of tokens.
  * @property {boolean} [hide] - Whether this token count is hidden or ignored in global totals.
@@ -72,9 +66,12 @@ import { isJsonObject, objType } from './tiny-modules/basics/objFilter.mjs';
  * **Note**: This script does not automatically track token count natively.
  *
  * @template {Record<any,any>} AICData
- * @template {SessionData<AICData>} SessionTemplate
+ * @template {Record<any, any>} SessionTemplate
  */
 class TinyAiInstance2Core extends TinyEvents {
+  /**
+   * @typedef {SessionDataContent<AICData> & SessionTemplate} SessionData
+   */
   #destroyed = false;
 
   get destroyed() {
@@ -95,9 +92,9 @@ class TinyAiInstance2Core extends TinyEvents {
     return this.#customValues.size;
   }
 
-  /** @type {Map<string, SessionTemplate>} */ #history = new Map();
+  /** @type {Map<string, SessionData>} */ #history = new Map();
 
-  /** @returns {Record<string, SessionTemplate>} */
+  /** @returns {Record<string, SessionData>} */
   get history() {
     return Object.fromEntries(this.#history);
   }
@@ -140,7 +137,7 @@ class TinyAiInstance2Core extends TinyEvents {
    * Creates an instance of the TinyAiInstance2Core class.
    *
    * @param {boolean} [isSingle=false] - If true, configures the instance to handle a single session only.
-   * @param {Partial<SessionTemplate>} [modData] - The initial modification data for the session.
+   * @param {Partial<SessionData>} [modData] - The initial modification data for the session.
    * @param {Record<string, CustomValidatorFunction>} [modValidators] - Custom validation functions.
    */
   constructor(isSingle = false, modData = undefined, modValidators = undefined) {
@@ -195,7 +192,7 @@ class TinyAiInstance2Core extends TinyEvents {
    * Creates the default session data structure.
    * Uses deep cloning to prevent shared references in arrays and objects.
    *
-   * @returns {SessionTemplate} The initialized session data.
+   * @returns {SessionData} The initialized session data.
    */
   _createDefaultSessionData() {
     return cloneDeep(this.#defaultSessionData);
@@ -843,7 +840,7 @@ class TinyAiInstance2Core extends TinyEvents {
    * Get the data associated with a specific session history ID.
    *
    * @param {string} [id] - The session ID. If omitted, the currently selected session history ID will be used.
-   * @returns {SessionTemplate} The data associated with the session ID, or `null` if no data exists for that ID.
+   * @returns {SessionData} The data associated with the session ID, or `null` if no data exists for that ID.
    */
   getData(id) {
     const selectedId = this.getId(id);
@@ -1261,7 +1258,7 @@ class TinyAiInstance2Core extends TinyEvents {
    *
    * @param {string} id - The session ID for the new data session.
    * @param {boolean} [selected=false] - A flag to indicate whether this session should be selected as the active session.
-   * @returns {SessionTemplate} The newly created session data.
+   * @returns {SessionData} The newly created session data.
    */
   startDataId(id, selected = false) {
     if (this.#destroyed)

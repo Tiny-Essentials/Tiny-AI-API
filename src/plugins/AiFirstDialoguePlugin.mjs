@@ -13,15 +13,11 @@ const AiFirstDialoguePlugin =
   (Base) =>
     /**
      * @template {Record<any,any>} AICData
-     * @template {SessionData & SessionFirstDialogueCore} SessionTemplate
-     * @extends {TBase<AICData, SessionTemplate>}
+     * @template {Record<any,any>} SessionTemplate
+     * @extends {TBase<AICData, SessionFirstDialogueCore & SessionTemplate>}
      */
     class TinyAiInstance2FirstDialogue extends Base {
       static _tinyDepName = 'FirstDialogue';
-      /** @typedef {import('../TinyAiInstance2Core.mjs').SessionData<AICData>} SessionData */
-
-      /////////////////////////////////////////////////////////////////////////////////////////////
-
       /**
        * Creates an instance of the TinyAiInstance2FirstDialogue class.
        *

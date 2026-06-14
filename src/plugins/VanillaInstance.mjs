@@ -5,10 +5,6 @@ import { imageToBase64, validateAIContentData } from '../services/VanillaAiConte
  * @typedef {import('../services/VanillaAiContentData.mjs').AIContentData} AIContentData
  */
 
-/**
- * @typedef {import('../TinyAiInstance2Core.mjs').SessionData<AIContentData>} SessionData
- */
-
 const VanillaInstance =
   /**
    * @template {typeof TinyAiInstance2Core|unknown} TBase
@@ -25,7 +21,7 @@ const VanillaInstance =
      * **Note**: This script does not automatically track token count natively since
      * standard OpenAI-compatible APIs often lack a dedicated token-counting endpoint.
      *
-     * @extends {TinyAiInstance2Core<AIContentData, SessionData>}
+     * @extends {TinyAiInstance2Core<AIContentData, Record<any, any>>}
      */
     class TinyAiInstance2 extends Base {
       static _tinyDepName = 'VanillaInstance';
