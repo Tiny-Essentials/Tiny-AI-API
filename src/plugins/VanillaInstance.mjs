@@ -11,8 +11,8 @@ import { imageToBase64, validateAIContentData } from '../services/VanillaAiConte
 
 const VanillaInstance =
   /**
-   * @template {typeof TinyAiInstance2Core|unknown} Base
-   * @param {Base} Base
+   * @template {typeof TinyAiInstance2Core|unknown} TBase
+   * @param {TBase} Base
    */
   (Base) =>
     /**

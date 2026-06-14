@@ -4,7 +4,15 @@ import AiFirstDialoguePlugin from './AiFirstDialoguePlugin.mjs';
 import VanillaInstance from './VanillaInstance.mjs';
 
 const aiManager = new TinyClassManager(TinyAiInstance2Core);
-const buildReady = aiManager.insert(AiFirstDialoguePlugin).insert(VanillaInstance);
+const buildReady = aiManager
+  .insert((Base) => {
+    const Result = AiFirstDialoguePlugin(Base);
+    return Result;
+  })
+  .insert((Base) => {
+    const Result = VanillaInstance(Base);
+    return Result;
+  });
 
 const tinyClass = buildReady.appliedPluginClasses[1];
 
