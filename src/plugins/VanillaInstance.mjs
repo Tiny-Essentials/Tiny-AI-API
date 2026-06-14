@@ -7,7 +7,7 @@ import { imageToBase64, validateAIContentData } from '../services/VanillaAiConte
 
 const VanillaInstance =
   /**
-   * @template {typeof TinyAiInstance2Core|unknown} TBase
+   * @template {new (...args: any[]) => import('../TinyAiInstance2Core.mjs').default<any, any>} TBase
    * @param {TBase} Base
    */
   (Base) =>
