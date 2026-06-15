@@ -1,11 +1,22 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { createRequire } from 'node:module';
+
+// Enables resolving paths inside node_modules natively
+const require = createRequire(import.meta.url);
+
+/**
+ * @typedef {Object} RootReplacement
+ * @property {string} from - The directory name to replace (e.g., 'src').
+ * @property {string} to - The directory name to insert (e.g., 'dist').
+ */
 
 /**
  * @typedef {Object} InlinerConfig
  * @property {string} entryPoint - The absolute or relative path to the entry file.
  * @property {string} outDir - The absolute or relative path to the output directory.
  * @property {string} outFileName - The name of the generated bundle file.
+ * @property {RootReplacement} [rootReplacement] - Optional customization to remap project import roots.
  */
 
 class PluginInliner {
@@ -15,6 +26,7 @@ class PluginInliner {
    * @param {InlinerConfig} config - The configuration object for the build process.
    */
   constructor(config) {
+    this.config = config;
     this.entryFile = path.resolve(config.entryPoint);
     this.outDir = path.resolve(config.outDir);
     this.outFile = path.join(this.outDir, config.outFileName);
@@ -25,26 +37,59 @@ class PluginInliner {
   }
 
   /**
-   * Corrects relative import paths to match the new output directory depth.
+   * Rewrites all import paths (both standard and inside JSDocs) in a given code string.
+   * Handles local path root replacements and NPM package absolute path conversion.
    *
    * @private
-   * @param {string} importLine - The raw import string.
-   * @returns {string} The corrected import string.
+   * @param {string} code - The source code containing imports.
+   * @param {string} sourceDir - The absolute directory of the file being processed.
+   * @param {boolean} isNpm - Whether this code comes from an external NPM package.
+   * @param {string|null} npmPackageName - The name of the NPM package, if applicable.
+   * @returns {string} The code with all paths corrected.
    */
-  _correctImportPath(importLine) {
-    return importLine.replace(
-      /(from\s+['"])([^'"]+)(['"])/,
-      (match, prefix, importPath, suffix) => {
-        // Ignore absolute imports or node modules (e.g., 'node:fs' or 'discord.js')
-        if (!importPath.startsWith('.')) return match;
+  _rewritePathsInString(code, sourceDir, isNpm, npmPackageName) {
+    /** 
+     * @param {string} match
+     * @param {string} prefix
+     * @param {string} importPath
+     * @param {string} suffix
+     */
+    const replacer = (match, prefix, importPath, suffix) => {
+      // Ignore absolute external imports (e.g., 'discord.js')
+      if (!importPath.startsWith('.')) return match;
 
-        // 1. Find the exact absolute path of the original target file
-        const absoluteTarget = path.resolve(this.entryDir, importPath);
+      const absoluteTarget = path.resolve(sourceDir, importPath);
 
-        // 2. Calculate the new relative path from the new output directory
-        let newRelativePath = path.relative(this.outDir, absoluteTarget);
+      if (isNpm) {
+        // If it's a relative import inside an NPM package, map it back to an absolute NPM path
+        const packageRootMarker = `node_modules${path.sep}${npmPackageName}`;
+        const markerIndex = absoluteTarget.lastIndexOf(packageRootMarker);
 
-        // 3. Force POSIX slashes (/) for JavaScript imports, even on Windows
+        if (markerIndex !== -1) {
+          const packageRootPath = absoluteTarget.substring(
+            0,
+            markerIndex + packageRootMarker.length,
+          );
+          let subPath = path.relative(packageRootPath, absoluteTarget);
+          subPath = subPath.split(path.sep).join(path.posix.sep);
+          const finalNpmImport = `${npmPackageName}/${subPath}`;
+
+          return `${prefix}${finalNpmImport}${suffix}`;
+        }
+        return match; // Fallback
+      } else {
+        // Local project file
+        let modifiedTarget = absoluteTarget;
+
+        // Applies the customizable project root replacement (e.g., 'src' to 'dist')
+        if (this.config.rootReplacement) {
+          const fromStr = `${path.sep}${this.config.rootReplacement.from}${path.sep}`;
+          const toStr = `${path.sep}${this.config.rootReplacement.to}${path.sep}`;
+          modifiedTarget = modifiedTarget.replace(fromStr, toStr);
+        }
+
+        // Calculate relative path from the new output directory
+        let newRelativePath = path.relative(this.outDir, modifiedTarget);
         newRelativePath = newRelativePath.split(path.sep).join(path.posix.sep);
 
         // Ensure it starts with './' if it's in the same directory
@@ -53,12 +98,20 @@ class PluginInliner {
         }
 
         return `${prefix}${newRelativePath}${suffix}`;
-      },
-    );
+      }
+    };
+
+    // Corrects standard imports: from '../path'
+    let result = code.replace(/(from\s+['"])([^'"]+)(['"])/g, replacer);
+
+    // Corrects JSDoc typedef imports: import('../path')
+    result = result.replace(/(import\s*\(\s*['"])([^'"]+)(['"]\s*\))/g, replacer);
+
+    return result;
   }
 
   /**
-   * Extracts and hoists imports and typedefs from a given code string.
+   * Extracts and hoists already-corrected imports and typedefs.
    *
    * @private
    * @param {string} code - The source code to parse.
@@ -70,17 +123,13 @@ class PluginInliner {
     // Hoist imports
     const importRegex = /^import\s+[^;]+;/gm;
     const imports = processedCode.match(importRegex) || [];
-    for (const imp of imports) {
-      this.hoistedImports.add(imp.trim());
-    }
+    for (const imp of imports) this.hoistedImports.add(imp.trim());
     processedCode = processedCode.replace(importRegex, '').trim();
 
     // Hoist typedefs
     const typedefRegex = /\/\*\*[\s\S]*?@typedef[\s\S]*?\*\//g;
     const typedefs = processedCode.match(typedefRegex) || [];
-    for (const def of typedefs) {
-      this.hoistedTypedefs.add(def.trim());
-    }
+    for (const def of typedefs) this.hoistedTypedefs.add(def.trim());
     processedCode = processedCode.replace(typedefRegex, '').trim();
 
     return processedCode;
@@ -132,50 +181,77 @@ class PluginInliner {
         return;
       }
 
-      // Initial extraction from the main file
-      entryContent = this._extractAndHoist(entryContent);
+      // 1. Identify original import paths for the plugins before any modifications
+      const pluginTargets = [];
+      const entryImportRegex = /^import\s+[^;]+;/gm;
+      const entryImportsMatch = entryContent.match(entryImportRegex) || [];
 
-      // Process each plugin
       for (const pluginName of pluginsToInline) {
-        // Find where this plugin was imported
-        const importLine = [...this.hoistedImports].find((imp) => imp.includes(` ${pluginName} `));
-        if (!importLine) continue;
-
-        const pathMatch = importLine.match(/from\s+['"]([^'"]+)['"]/);
-        if (!pathMatch) continue;
-
-        const pluginFullPath = path.resolve(this.entryDir, pathMatch[1]);
-        let pluginCode = await fs.readFile(pluginFullPath, 'utf8');
-
-        // Extract internal dependencies of the plugin
-        pluginCode = this._extractAndHoist(pluginCode);
-
-        // Clean and format the class
-        pluginCode = this._formatPluginCode(pluginCode, pluginName);
-
-        // Inject the code into the entry file
-        const insertTarget = new RegExp(`\\.insert\\(\\s*${pluginName}\\s*\\)`, 'g');
-        entryContent = entryContent.replace(insertTarget, `.insert(\n${pluginCode}\n)`);
-
-        // Remove the plugin's original import line (since it is now inlined)
-        this.hoistedImports.delete(importLine);
+        const importLine = entryImportsMatch.find((imp) => imp.includes(` ${pluginName} `));
+        if (importLine) {
+          const pathMatch = importLine.match(/from\s+['"]([^'"]+)['"]/);
+          if (pathMatch) {
+            pluginTargets.push({
+              name: pluginName,
+              importPath: pathMatch[1],
+              originalImportLine: importLine,
+            });
+            // Remove the plugin import line so it isn't rewritten and hoisted normally
+            entryContent = entryContent.replace(importLine, '');
+          }
+        }
       }
 
-      // Correct all gathered import paths for the new directory
-      const finalImports = [...this.hoistedImports]
-        .map((imp) => this._correctImportPath(imp))
-        .join('\n');
+      // 2. Rewrite paths and hoist from the main entry file
+      entryContent = this._rewritePathsInString(entryContent, this.entryDir, false, null);
+      entryContent = this._extractAndHoist(entryContent);
 
+      // 3. Process each plugin using their original import paths
+      for (const target of pluginTargets) {
+        const isNpm = !target.importPath.startsWith('.');
+        let pluginFullPath;
+        let npmPackageName = null;
+
+        if (isNpm) {
+          // Identify NPM package name (handles @scope/package as well)
+          const parts = target.importPath.split('/');
+          npmPackageName = target.importPath.startsWith('@') ? `${parts[0]}/${parts[1]}` : parts[0];
+
+          try {
+            // Locate the physical file inside node_modules
+            pluginFullPath = require.resolve(target.importPath, { paths: [this.entryDir] });
+          } catch (e) {
+            console.error(`Error: Could not resolve NPM module: ${target.importPath}`);
+            throw e;
+          }
+        } else {
+          pluginFullPath = path.resolve(this.entryDir, target.importPath);
+        }
+
+        const pluginSourceDir = path.dirname(pluginFullPath);
+        let pluginCode = await fs.readFile(pluginFullPath, 'utf8');
+
+        // Rewrite internal paths (handles NPM isolation vs Local Root Replacement)
+        pluginCode = this._rewritePathsInString(pluginCode, pluginSourceDir, isNpm, npmPackageName);
+
+        // Hoist dependencies
+        pluginCode = this._extractAndHoist(pluginCode);
+
+        // Format and inject
+        pluginCode = this._formatPluginCode(pluginCode, target.name);
+        const insertTarget = new RegExp(`\\.insert\\(\\s*${target.name}\\s*\\)`, 'g');
+        entryContent = entryContent.replace(insertTarget, `.insert(\n${pluginCode}\n)`);
+      }
+
+      // 4. Final Assembly
+      const finalImports = [...this.hoistedImports].join('\n');
       const finalTypedefs = [...this.hoistedTypedefs].join('\n\n');
-
       const finalOutput = `${finalImports}\n\n${finalTypedefs}\n\n${entryContent}`;
 
       await fs.mkdir(this.outDir, { recursive: true });
       await fs.writeFile(this.outFile, finalOutput, 'utf8');
 
-      console.log(
-        'Build successful! Plugins inlined, JSDocs preserved, and paths automatically corrected.',
-      );
+      console.log('Build successful! Imports corrected (including JSDoc and NPM modules).');
     } catch (error) {
       console.error('Build failed:', error);
       process.exit(1);
@@ -191,6 +267,11 @@ const builder = new PluginInliner({
   entryPoint: 'src/plugins/test.mjs',
   outDir: 'dist',
   outFileName: 'test.bundle.mjs',
+  // Optional: Automatically redirects all original 'src' paths to point to 'dist'
+  rootReplacement: {
+    from: 'src',
+    to: 'dist',
+  },
 });
 
 builder.build();
