@@ -48,7 +48,7 @@ class PluginInliner {
    * @returns {string} The code with all paths corrected.
    */
   _rewritePathsInString(code, sourceDir, isNpm, npmPackageName) {
-    /** 
+    /**
      * @param {string} match
      * @param {string} prefix
      * @param {string} importPath
