@@ -101,7 +101,7 @@
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/events": "^3.0.3",
     "@types/lodash": "^4.17.16",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.1",
     "@types/node-fetch": "^2.6.12",
     "@types/object-hash": "^3.0.6",
     "lodash": "^4.17.21",
