@@ -49,7 +49,7 @@
   "license": "LGPL-3.0-only",
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",
-    "ai": "^6.0.193",
+    "ai": "^7.0.8",
     "js-base64": "^3.7.8",
     "jsonrepair": "^3.12.0",
     "object-hash": "^3.0.0"
