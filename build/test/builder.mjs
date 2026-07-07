@@ -1,4 +1,4 @@
-import TinyPluginInliner from '../tiny-modules/libs/TinyClassManager/TinyPluginInliner.mjs';
+import TinyPluginInliner from '../../src/tiny-modules/libs/TinyClassManager/TinyPluginInliner.mjs';
 
 // ==========================================
 // Usage Execution

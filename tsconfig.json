@@ -1,6 +1,8 @@
 {
     "compilerOptions": {
+        "rootDir": "./src",
         "outDir": "./dist",
+        "types": ["node"],
         "allowJs": true,
         "checkJs": true,
         "declaration": true,

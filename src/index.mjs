@@ -1,5 +1,5 @@
 import TinyAiInstance2Core from './TinyAiInstance2Core.mjs';
-import VanillaInstance from './plugins/VanillaInstance.mjs';
+// import VanillaInstance from './plugins/VanillaInstance.mjs';
 
 import {
   checkObj as checkAiObj,
@@ -13,7 +13,7 @@ import TinyEvents from './tiny-modules/libs/TinyEvents.mjs';
 
 export {
   TinyAiInstance2Core,
-  VanillaInstance,
+  // VanillaInstance,
   checkAiObj,
   cloneAiObjTypeOrder,
   extendAiObjType,
