@@ -48,7 +48,7 @@
   "author": "Yasmin Seidel (JasminDreasond)",
   "license": "LGPL-3.0-only",
   "dependencies": {
-    "@ai-sdk/openai-compatible": "^2.0.48",
+    "@ai-sdk/openai-compatible": "^3.0.13",
     "ai": "^6.0.193",
     "js-base64": "^3.7.8",
     "jsonrepair": "^3.12.0",
