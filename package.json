@@ -112,7 +112,7 @@
     "esmify": "^2.1.1",
     "express": "^5.1.0",
     "lodash": "^4.17.21",
-    "marked": "^17.0.4",
+    "marked": "^18.0.10",
     "node-polyfill-webpack-plugin": "^4.1.0",
     "prettier": "^3.9.4",
     "rollup": "^4.62.2",
